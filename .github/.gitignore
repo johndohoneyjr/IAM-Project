@@ -1,0 +1,4 @@
+# Ignore editor and OS artifacts in .github
+.DS_Store
+*.swp
+*.swo
