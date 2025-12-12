@@ -1,0 +1,175 @@
+# ACR Direct Import Template
+# Performs direct ACR-to-ACR image transfer using immutable digests
+
+parameters:
+- name: serviceName
+  type: string
+- name: sourceACR
+  type: string
+- name: targetACR
+  type: string
+- name: imageDigest
+  type: string
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Direct ACR Import'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      SOURCE_IMAGE="${{ parameters.sourceACR }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}"
+      TARGET_REGISTRY="${{ parameters.targetACR }}"
+      SERVICE_NAME="${{ parameters.serviceName }}"
+      BUILD_ID="$(Build.BuildId)"
+      
+      echo "Starting direct ACR import..."
+      echo "Source: $SOURCE_IMAGE"
+      echo "Target registry: $TARGET_REGISTRY"
+      echo "Service: $SERVICE_NAME"
+      
+      # Verify source image exists
+      echo "Verifying source image exists..."
+      az acr repository show \
+        --name ${{ parameters.sourceACR }} \
+        --image $SERVICE_NAME@${{ parameters.imageDigest }} \
+        --query "digest" -o tsv
+      
+      if [ $? -ne 0 ]; then
+        echo "❌ Source image not found"
+        exit 1
+      fi
+      
+      echo "✅ Source image verified"
+      
+      # Import image with digest preservation
+      echo "Importing image to target registry..."
+      az acr import \
+        --name $TARGET_REGISTRY \
+        --source $SOURCE_IMAGE \
+        --image $SERVICE_NAME@${{ parameters.imageDigest }}
+      
+      if [ $? -ne 0 ]; then
+        echo "❌ Failed to import image"
+        exit 1
+      fi
+      
+      echo "✅ Image imported successfully"
+      
+      # Add human-readable tags for operational convenience
+      echo "Adding operational tags..."
+      
+      # Current timestamp for tracking
+      TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+      
+      az acr import \
+        --name $TARGET_REGISTRY \
+        --source $SOURCE_IMAGE \
+        --image $SERVICE_NAME:promoted-$BUILD_ID \
+        --image $SERVICE_NAME:promoted-$TIMESTAMP
+      
+      # Update latest tag to point to this digest
+      az acr import \
+        --name $TARGET_REGISTRY \
+        --source $SOURCE_IMAGE \
+        --image $SERVICE_NAME:latest
+      
+      echo "✅ Operational tags added successfully"
+      
+      # Verify import was successful
+      echo "Verifying import..."
+      TARGET_DIGEST=$(az acr repository show \
+        --name $TARGET_REGISTRY \
+        --image $SERVICE_NAME@${{ parameters.imageDigest }} \
+        --query "digest" -o tsv)
+      
+      if [ "$TARGET_DIGEST" = "${{ parameters.imageDigest }}" ]; then
+        echo "✅ Import verification successful"
+        echo "Target digest matches source: $TARGET_DIGEST"
+      else
+        echo "❌ Import verification failed"
+        echo "Expected: ${{ parameters.imageDigest }}"
+        echo "Got: $TARGET_DIGEST"
+        exit 1
+      fi
+
+- task: AzureCLI@2
+  displayName: 'Verify Signature Preservation'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      TARGET_IMAGE="${{ parameters.targetACR }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}"
+      
+      echo "Verifying signatures were preserved during import..."
+      echo "Target image: $TARGET_IMAGE"
+      
+      # Install cosign if not available
+      if ! command -v cosign &> /dev/null; then
+        echo "Installing Cosign..."
+        curl -O -L "https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64"
+        chmod +x cosign-linux-amd64
+        sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+      fi
+      
+      # Authenticate to target registry
+      az acr login --name ${{ parameters.targetACR }}
+      
+      # Check if signatures exist
+      echo "Checking for signatures..."
+      cosign verify-attestation \
+        --type slsaprovenance \
+        --output json \
+        $TARGET_IMAGE > /dev/null 2>&1
+      
+      if [ $? -eq 0 ]; then
+        echo "✅ Signatures preserved during import"
+      else
+        echo "⚠️ No signatures found - this may be expected for dev builds"
+      fi
+
+- task: AzureCLI@2
+  displayName: 'Generate Import Report'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      # Generate import report
+      cat > import-report.json << EOF
+      {
+        "importTimestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+        "buildId": "$(Build.BuildId)",
+        "buildNumber": "$(Build.BuildNumber)",
+        "serviceName": "${{ parameters.serviceName }}",
+        "sourceRegistry": "${{ parameters.sourceACR }}",
+        "targetRegistry": "${{ parameters.targetACR }}",
+        "imageDigest": "${{ parameters.imageDigest }}",
+        "sourceImage": "${{ parameters.sourceACR }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}",
+        "targetImage": "${{ parameters.targetACR }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}",
+        "operationalTags": [
+          "${{ parameters.serviceName }}:promoted-$(Build.BuildId)",
+          "${{ parameters.serviceName }}:latest"
+        ],
+        "pipelineUrl": "$(System.CollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)"
+      }
+      EOF
+      
+      echo "Import report generated:"
+      cat import-report.json
+      
+      echo "✅ Direct ACR import completed successfully"
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Import Report'
+  inputs:
+    pathToPublish: 'import-report.json'
+    artifactName: 'ImportReport-${{ parameters.serviceName }}'

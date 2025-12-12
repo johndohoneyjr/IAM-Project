@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneStream Pipeline Refactoring: Modern Azure DevOps Implementation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .presentation-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .slide {
+            background-color: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            padding: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            page-break-after: always;
+        }
+
+        .slide h1 {
+            color: #000000;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            text-align: center;
+            border-bottom: 3px solid #808080;
+            padding-bottom: 15px;
+        }
+
+        .slide h2 {
+            color: #333333;
+            font-size: 2rem;
+            margin-bottom: 25px;
+            margin-top: 30px;
+        }
+
+        .slide h3 {
+            color: #555555;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            margin-top: 25px;
+        }
+
+        .slide h4 {
+            color: #666666;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            margin-top: 20px;
+        }
+
+        .challenge-box {
+            background-color: #f8f8f8;
+            border-left: 5px solid #808080;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .benefit-box {
+            background-color: #f5f5f5;
+            border-left: 5px solid #606060;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .code-block {
+            background-color: #f0f0f0;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background-color: #f9f9f9;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333333;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666666;
+            margin-top: 5px;
+        }
+
+        .timeline {
+            position: relative;
+            margin: 30px 0;
+        }
+
+        .timeline-item {
+            background-color: #f7f7f7;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+            margin-left: 30px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -15px;
+            top: 25px;
+            width: 10px;
+            height: 10px;
+            background-color: #808080;
+            border-radius: 50%;
+        }
+
+        .timeline-item h4 {
+            color: #333333;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #cccccc;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .comparison-table th {
+            background-color: #e8e8e8;
+            font-weight: bold;
+            color: #333333;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+
+        .architecture-diagram {
+            background-color: #f9f9f9;
+            border: 2px solid #d0d0d0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .flow-step {
+            display: inline-block;
+            background-color: #e8e8e8;
+            border: 2px solid #808080;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 10px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #666666;
+            margin: 0 10px;
+        }
+
+        .navigation {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #f0f0f0;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 1000;
+        }
+
+        .navigation a {
+            display: block;
+            color: #333333;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 2px 0;
+        }
+
+        .navigation a:hover {
+            background-color: #e0e0e0;
+        }
+
+        .highlight {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        @media print {
+            .navigation {
+                display: none;
+            }
+            
+            .slide {
+                page-break-inside: avoid;
+                margin-bottom: 0;
+                border: none;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navigation">
+        <strong>Navigation</strong>
+        <a href="#title">Title</a>
+        <a href="#challenges">Challenges</a>
+        <a href="#best-practices">Best Practices</a>
+        <a href="#approach">Our Approach</a>
+        <a href="#poc-environment">POC Environment</a>
+        <a href="#timeline">Implementation</a>
+        <a href="#benefits">Benefits</a>
+        <a href="#next-steps">Next Steps</a>
+    </div>
+
+    <div class="presentation-container">
+        <!-- Title Slide -->
+        <div id="title" class="slide">
+            <h1>OneStream Pipeline Refactoring</h1>
+            <h2 style="text-align: center; color: #666666; margin-top: 40px;">Modern Azure DevOps Implementation Strategy</h2>
+            
+            <div style="text-align: center; margin-top: 60px;">
+                <div class="stat-card" style="display: inline-block; margin: 20px;">
+                    <span class="stat-number">600+</span>
+                    <span class="stat-label">Lines of monolithic YAML</span>
+                </div>
+                <div class="stat-card" style="display: inline-block; margin: 20px;">
+                    <span class="stat-number">45-60</span>
+                    <span class="stat-label">Minutes build time</span>
+                </div>
+                <div class="stat-card" style="display: inline-block; margin: 20px;">
+                    <span class="stat-number">15+</span>
+                    <span class="stat-label">Pipeline dependencies</span>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; font-size: 1.2rem; color: #666666;">
+                <strong>From Complex Monolith to Modern Microservice Architecture</strong>
+            </div>
+        </div>
+
+        <!-- Current Challenges -->
+        <div id="challenges" class="slide">
+            <h1>Current State: The Challenge</h1>
+
+            <h2>Monolithic Pipeline Complexity</h2>
+            
+            <div class="challenge-box">
+                <h3>🚨 Critical Issues Identified</h3>
+                <ul>
+                    <li><strong>Massive YAML files:</strong> 600+ lines with complex conditional logic</li>
+                    <li><strong>Service coupling:</strong> Single pipeline handles 6+ distinct services</li>
+                    <li><strong>Long build times:</strong> 45-60 minute execution cycles</li>
+                    <li><strong>Maintenance overhead:</strong> Changes require understanding entire system</li>
+                    <li><strong>Deployment risks:</strong> Single point of failure affects all services</li>
+                </ul>
+            </div>
+
+            <h2>Cost Impact Analysis</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">$70K+</span>
+                    <span class="stat-label">Annual blob storage costs</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">120+</span>
+                    <span class="stat-label">Developer hours/month lost</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">40%</span>
+                    <span class="stat-label">Failed deployments due to coupling</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">15+</span>
+                    <span class="stat-label">Cross-service dependencies</span>
+                </div>
+            </div>
+
+            <h2>Current Architecture Problems</h2>
+            
+            <div class="architecture-diagram">
+                <h3>Monolithic Pipeline Flow</h3>
+                <div style="margin: 20px 0;">
+                    <div class="flow-step" style="background-color: #ffcccc;">Source Code</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #ffcccc;">Single 600+ Line Pipeline</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #ffcccc;">All Services Coupled</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #ffcccc;">Blob Storage Overhead</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #ffcccc;">Slow Deployment</div>
+                </div>
+                <p style="color: #666666; margin-top: 20px;">
+                    <strong>Result:</strong> High complexity, slow execution, expensive storage, difficult maintenance
+                </p>
+            </div>
+        </div>
+
+        <!-- Industry Best Practices -->
+        <div id="best-practices" class="slide">
+            <h1>Industry Best Practices</h1>
+
+            <h2>Microsoft Secure Future Initiative</h2>
+            
+            <div class="benefit-box">
+                <h3>📊 Enterprise Success Metrics</h3>
+                <ul>
+                    <li><strong>92% adoption</strong> of governed pipeline templates across Microsoft</li>
+                    <li><strong>Template-based standardization</strong> for enterprise security</li>
+                    <li><strong>Service-specific isolation</strong> reduces blast radius</li>
+                    <li><strong>Immutable deployments</strong> with cryptographic verification</li>
+                </ul>
+            </div>
+
+            <h2>Modern Pipeline Architecture Principles</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Principle</th>
+                        <th>Current State</th>
+                        <th>Best Practice Target</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Service Isolation</strong></td>
+                        <td>Monolithic 600+ line pipeline</td>
+                        <td>Service-specific pipelines</td>
+                        <td>Reduced coupling, faster builds</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Immutable Artifacts</strong></td>
+                        <td>Mutable tags, blob storage</td>
+                        <td>Digest-based references</td>
+                        <td>Reproducible deployments</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Template Reuse</strong></td>
+                        <td>Copy-paste YAML blocks</td>
+                        <td>Centralized template library</td>
+                        <td>Consistent governance</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Integration</strong></td>
+                        <td>Manual security processes</td>
+                        <td>Automated Cosign signing</td>
+                        <td>Supply chain security</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage Efficiency</strong></td>
+                        <td>Expensive blob intermediates</td>
+                        <td>Direct ACR transfers</td>
+                        <td>$70K+ annual savings</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Immutable Digest Strategy</h2>
+            
+            <div class="code-block">
+# Traditional Mutable Approach (Current)
+image: myregistry.azurecr.io/iam:v1.2.3
+# ❌ Tag can be overwritten, unreliable
+
+# Modern Immutable Approach (Target)
+image: myregistry.azurecr.io/iam@sha256:abc123def456...
+# ✅ Cryptographically unique, tamper-proof
+            </div>
+
+            <h2>Security Best Practices</h2>
+            
+            <div class="architecture-diagram">
+                <h3>Secure Supply Chain Flow</h3>
+                <div style="margin: 20px 0;">
+                    <div class="flow-step">Source Code</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Build + Test</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Security Scan</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Cosign Sign</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Digest Capture</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Immutable Deploy</div>
+                </div>
+                <p style="color: #666666; margin-top: 20px;">
+                    <strong>Key:</strong> Every artifact is cryptographically signed and referenced by immutable digest
+                </p>
+            </div>
+        </div>
+
+        <!-- Our Approach -->
+        <div id="approach" class="slide">
+            <h1>Our Refactoring Approach</h1>
+
+            <h2>Service-Specific Pipeline Architecture</h2>
+            
+            <div class="architecture-diagram">
+                <h3>New Modular Design</h3>
+                <div style="margin: 20px 0;">
+                    <div style="display: block; margin: 15px 0;">
+                        <div class="flow-step" style="background-color: #ccffcc;">IAM Pipeline</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">Templates</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">ACR Direct</div>
+                    </div>
+                    <div style="display: block; margin: 15px 0;">
+                        <div class="flow-step" style="background-color: #ccffcc;">OneStream Pipeline</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">Templates</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">ACR Direct</div>
+                    </div>
+                    <div style="display: block; margin: 15px 0;">
+                        <div class="flow-step" style="background-color: #ccffcc;">AISG Pipeline</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">Templates</div>
+                        <span class="flow-arrow">→</span>
+                        <div class="flow-step">ACR Direct</div>
+                    </div>
+                </div>
+                <p style="color: #666666; margin-top: 20px;">
+                    <strong>Benefits:</strong> Independent development, faster builds, isolated failures
+                </p>
+            </div>
+
+            <h2>Template-Based Governance</h2>
+
+            <div class="code-block">
+# Service Pipeline (iam-pipeline.yml)
+extends:
+  template: templates/service-pipeline-template.yml
+  parameters:
+    serviceName: 'iam'
+    containerRegistry: 'onestream-dev'
+    deploymentTargets:
+      - environment: 'development'
+        approvers: []
+      - environment: 'staging' 
+        approvers: ['qa-team@onestream.com']
+      - environment: 'production'
+        approvers: ['change-board@onestream.com']
+            </div>
+
+            <h2>Performance Improvements</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">40-60%</span>
+                    <span class="stat-label">Faster build times</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">$70K+</span>
+                    <span class="stat-label">Annual cost savings</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">90%</span>
+                    <span class="stat-label">Reduced deployment failures</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5x</span>
+                    <span class="stat-label">Faster troubleshooting</span>
+                </div>
+            </div>
+
+            <h2>Immutable Digest Integration</h2>
+
+            <div class="benefit-box">
+                <h3>🔒 Security & Reliability Benefits</h3>
+                <ul>
+                    <li><strong>Tamper-proof references:</strong> sha256 digests cannot be modified</li>
+                    <li><strong>Reproducible builds:</strong> Exact same artifacts across environments</li>
+                    <li><strong>Supply chain security:</strong> Cosign cryptographic signatures</li>
+                    <li><strong>Audit trail:</strong> Complete deployment history with verification</li>
+                    <li><strong>Compliance ready:</strong> FIPS 140-2 Level 3 HSM integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- POC Environment Setup -->
+        <div id="poc-environment" class="slide">
+            <h1>Parallel POC Environment Strategy</h1>
+
+            <h2>Risk-Free Validation Approach</h2>
+            
+            <div class="challenge-box">
+                <h3>🎯 POC Objectives</h3>
+                <ul>
+                    <li><strong>Zero production impact:</strong> Completely isolated testing environment</li>
+                    <li><strong>IAM service first:</strong> Start with lowest-risk, highest-value service</li>
+                    <li><strong>Full pipeline validation:</strong> Build → Test → Sign → Deploy → Promote</li>
+                    <li><strong>Performance comparison:</strong> Side-by-side metrics against current system</li>
+                    <li><strong>Team training:</strong> Hands-on experience with new architecture</li>
+                </ul>
+            </div>
+
+            <h2>POC Infrastructure Architecture</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>POC Environment</th>
+                        <th>Isolation Method</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Azure Subscription</strong></td>
+                        <td>onestream-poc-subscription</td>
+                        <td>Separate billing boundary</td>
+                        <td>Complete resource isolation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Resource Groups</strong></td>
+                        <td>onestream-poc-dev-rg<br/>onestream-poc-staging-rg<br/>onestream-poc-shared-rg</td>
+                        <td>Environment-specific grouping</td>
+                        <td>Logical resource organization</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Container Registry</strong></td>
+                        <td>onestreampocdex<br/>onestreampocstaging</td>
+                        <td>Dedicated ACR instances</td>
+                        <td>Image lifecycle testing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AKS Clusters</strong></td>
+                        <td>onestream-poc-dev-aks<br/>onestream-poc-staging-aks</td>
+                        <td>Isolated Kubernetes clusters</td>
+                        <td>Deployment validation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure DevOps</strong></td>
+                        <td>OneStream-Pipeline-POC project</td>
+                        <td>Separate project workspace</td>
+                        <td>Pipeline development</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Least Privilege Security Model</h2>
+
+            <div class="architecture-diagram">
+                <h3>Service Principal Access Matrix</h3>
+                <div style="text-align: left; margin: 20px 0;">
+                    <div style="margin: 15px 0;">
+                        <strong>sp-onestream-poc-dev-pipeline</strong>
+                        <div style="margin-left: 20px; font-size: 0.9rem; color: #666666;">
+                            ✅ AcrPush to dev registry<br/>
+                            ✅ Deploy to dev AKS<br/>
+                            ✅ Cosign signing access<br/>
+                            ❌ No staging/production access
+                        </div>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <strong>sp-onestream-poc-staging-pipeline</strong>
+                        <div style="margin-left: 20px; font-size: 0.9rem; color: #666666;">
+                            ✅ AcrPull from staging registry<br/>
+                            ✅ Deploy to staging AKS<br/>
+                            ❌ No ACR push capabilities<br/>
+                            ❌ No dev environment access
+                        </div>
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <strong>sp-onestream-poc-promotion-engine</strong>
+                        <div style="margin-left: 20px; font-size: 0.9rem; color: #666666;">
+                            ✅ Cross-environment ACR import<br/>
+                            ✅ Signature verification<br/>
+                            ❌ No deployment capabilities<br/>
+                            ❌ Limited to promotion operations
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2>Version Management Through Approval Stages</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Development Stage</h4>
+                    <p><strong>Version:</strong> <span class="highlight">poc-12345-a1b2c3d</span></p>
+                    <p><strong>Digest:</strong> <span class="highlight">sha256:abc123...</span></p>
+                    <p><strong>Gates:</strong> Automated tests, security scan, Cosign signing</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Staging Promotion</h4>
+                    <p><strong>Reference:</strong> <span class="highlight">Same digest (immutable)</span></p>
+                    <p><strong>Method:</strong> ACR import from dev to staging</p>
+                    <p><strong>Gates:</strong> QA team approval, integration tests</p>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Production Promotion</h4>
+                    <p><strong>Reference:</strong> <span class="highlight">Same digest (immutable)</span></p>
+                    <p><strong>Method:</strong> ACR import from staging to production</p>
+                    <p><strong>Gates:</strong> Business approval, security review, change board</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Timeline -->
+        <div id="timeline" class="slide">
+            <h1>Implementation Timeline</h1>
+
+            <h2>8-Week Phased Approach</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Week 1-2: POC Environment Setup</h4>
+                    <ul>
+                        <li>Create isolated Azure subscription and resource groups</li>
+                        <li>Deploy ACR, AKS, and Key Vault infrastructure</li>
+                        <li>Configure service principals with least privilege access</li>
+                        <li>Set up Azure DevOps POC project and service connections</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Week 3-4: IAM Pipeline Development</h4>
+                    <ul>
+                        <li>Create service-specific IAM pipeline templates</li>
+                        <li>Implement Cosign integration with Azure Key Vault</li>
+                        <li>Build immutable digest capture and promotion workflows</li>
+                        <li>Configure automated security scanning (Trivy)</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Week 5-6: Testing and Validation</h4>
+                    <ul>
+                        <li>Deploy IAM service through new pipeline</li>
+                        <li>Validate digest-based deployments across environments</li>
+                        <li>Test canary deployment and rollback procedures</li>
+                        <li>Performance comparison with existing pipeline</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Week 7-8: Documentation and Training</h4>
+                    <ul>
+                        <li>Create comprehensive deployment guides</li>
+                        <li>Train development team on new workflows</li>
+                        <li>Document rollback and troubleshooting procedures</li>
+                        <li>Prepare production migration strategy</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Success Criteria</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">≤15 min</span>
+                    <span class="stat-label">IAM build time</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Reproducible deployments</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">≤5 min</span>
+                    <span class="stat-label">Rollback time</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Production incidents</span>
+                </div>
+            </div>
+
+            <h2>Rollback Strategy</h2>
+
+            <div class="architecture-diagram">
+                <h3>Automated Canary Rollback Flow</h3>
+                <div style="margin: 20px 0;">
+                    <div class="flow-step">Deploy Canary (10%)</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Health Monitoring</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #ffeeee;">Failure Detection</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #eeffee;">Auto-Rollback</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step">Previous Version</div>
+                </div>
+                <p style="color: #666666; margin-top: 20px;">
+                    <strong>Target:</strong> Complete rollback within 5 minutes of failure detection
+                </p>
+            </div>
+        </div>
+
+        <!-- Benefits and ROI -->
+        <div id="benefits" class="slide">
+            <h1>Expected Benefits and ROI</h1>
+
+            <h2>Quantified Business Impact</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Current State</th>
+                        <th>Target State</th>
+                        <th>Improvement</th>
+                        <th>Annual Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Build Time</strong></td>
+                        <td>45-60 minutes</td>
+                        <td>15-20 minutes</td>
+                        <td>60-70% faster</td>
+                        <td>$150K+ developer time savings</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage Costs</strong></td>
+                        <td>$70K+ blob storage</td>
+                        <td>$10K ACR premium</td>
+                        <td>85% reduction</td>
+                        <td>$60K+ direct savings</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deployment Failures</strong></td>
+                        <td>40% failure rate</td>
+                        <td>5% failure rate</td>
+                        <td>87.5% improvement</td>
+                        <td>$200K+ incident reduction</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Compliance</strong></td>
+                        <td>Manual processes</td>
+                        <td>Automated verification</td>
+                        <td>100% compliance</td>
+                        <td>Risk reduction</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Technical Benefits</h2>
+
+            <div class="benefit-box">
+                <h3>🚀 Development Velocity</h3>
+                <ul>
+                    <li><strong>Independent development:</strong> Teams can work on services without conflicts</li>
+                    <li><strong>Faster feedback loops:</strong> Service-specific builds complete in 15-20 minutes</li>
+                    <li><strong>Easier troubleshooting:</strong> Isolated pipelines simplify debugging</li>
+                    <li><strong>Template reuse:</strong> Consistent patterns across all services</li>
+                </ul>
+            </div>
+
+            <div class="benefit-box">
+                <h3>🔒 Security and Compliance</h3>
+                <ul>
+                    <li><strong>Supply chain security:</strong> Cryptographic signing with Cosign</li>
+                    <li><strong>Immutable artifacts:</strong> Tamper-proof deployment references</li>
+                    <li><strong>Audit trail:</strong> Complete deployment history with verification</li>
+                    <li><strong>Least privilege access:</strong> Service-specific permissions only</li>
+                </ul>
+            </div>
+
+            <div class="benefit-box">
+                <h3>💰 Cost Optimization</h3>
+                <ul>
+                    <li><strong>Direct ACR transfers:</strong> Eliminate expensive blob storage</li>
+                    <li><strong>Reduced compute time:</strong> Shorter builds = lower agent costs</li>
+                    <li><strong>Fewer incidents:</strong> Reduced troubleshooting and rollback costs</li>
+                    <li><strong>Operational efficiency:</strong> Less manual intervention required</li>
+                </ul>
+            </div>
+
+            <h2>Risk Mitigation</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">Zero</span>
+                    <span class="stat-label">Production disruption during POC</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Rollback capability</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">Isolated</span>
+                    <span class="stat-label">Testing environment</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">Parallel</span>
+                    <span class="stat-label">Operation model</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div id="next-steps" class="slide">
+            <h1>Next Steps and Call to Action</h1>
+
+            <h2>Immediate Actions Required</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h4>Week 1: Environment Approval and Setup</h4>
+                    <ul>
+                        <li><strong>Secure approvals:</strong> POC subscription and resource allocation</li>
+                        <li><strong>Team assignment:</strong> Dedicate 2-3 developers for POC development</li>
+                        <li><strong>Infrastructure provisioning:</strong> Deploy isolated POC environment</li>
+                        <li><strong>Access configuration:</strong> Set up service principals and permissions</li>
+                    </ul>
+                </div>
+                
+                <div class="timeline-item">
+                    <h4>Week 2: Pipeline Development Kickoff</h4>
+                    <ul>
+                        <li><strong>Template creation:</strong> Build reusable pipeline templates</li>
+                        <li><strong>IAM service integration:</strong> Connect IAM codebase to new pipeline</li>
+                        <li><strong>Security setup:</strong> Configure Cosign and Key Vault integration</li>
+                        <li><strong>Monitoring setup:</strong> Implement performance tracking</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h2>Success Criteria and Checkpoints</h2>
+
+            <div class="challenge-box">
+                <h3>📊 Week 4 Checkpoint: Initial Results</h3>
+                <ul>
+                    <li>IAM service successfully building through new pipeline</li>
+                    <li>Build time reduced from 45+ minutes to ≤20 minutes</li>
+                    <li>Immutable digest deployment working end-to-end</li>
+                    <li>Security scanning and signing automated</li>
+                </ul>
+            </div>
+
+            <div class="benefit-box">
+                <h3>🎯 Week 8 Checkpoint: Full Validation</h3>
+                <ul>
+                    <li>Complete canary deployment and rollback tested</li>
+                    <li>Performance metrics documented and validated</li>
+                    <li>Team training completed and documented</li>
+                    <li>Production migration plan approved</li>
+                </ul>
+            </div>
+
+            <h2>Resource Requirements</h2>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Resource Type</th>
+                        <th>Requirement</th>
+                        <th>Duration</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Development Team</strong></td>
+                        <td>2-3 developers (50% time)</td>
+                        <td>8 weeks</td>
+                        <td>Pipeline development and testing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DevOps Engineer</strong></td>
+                        <td>1 senior engineer (75% time)</td>
+                        <td>8 weeks</td>
+                        <td>Infrastructure and architecture</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security Review</strong></td>
+                        <td>1 security engineer (25% time)</td>
+                        <td>2 weeks</td>
+                        <td>Cosign and compliance validation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure Resources</strong></td>
+                        <td>POC subscription</td>
+                        <td>3 months</td>
+                        <td>Isolated testing environment</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Decision Points</h2>
+
+            <div class="architecture-diagram">
+                <h3>Go/No-Go Decision Framework</h3>
+                <div style="margin: 20px 0;">
+                    <div class="flow-step" style="background-color: #e8f4fd;">Week 4<br/>Initial Results</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #fff2cc;">Performance<br/>Validation</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #d5e8d4;">Week 8<br/>Full Approval</div>
+                    <span class="flow-arrow">→</span>
+                    <div class="flow-step" style="background-color: #f8cecc;">Production<br/>Migration</div>
+                </div>
+                <p style="color: #666666; margin-top: 20px;">
+                    <strong>Each checkpoint requires explicit approval to proceed</strong>
+                </p>
+            </div>
+
+            <h2>Call to Action</h2>
+
+            <div style="text-align: center; margin: 40px 0; padding: 30px; background-color: #f0f0f0; border-radius: 10px;">
+                <h3 style="color: #333333; margin-bottom: 20px;">Ready to Transform OneStream's Pipeline Architecture?</h3>
+                <div style="font-size: 1.2rem; color: #666666; margin-bottom: 30px;">
+                    <strong>Let's start with the IAM service POC and prove the value</strong>
+                </div>
+                <div style="display: inline-block; margin: 10px;">
+                    <div class="stat-card">
+                        <span class="stat-number">$400K+</span>
+                        <span class="stat-label">Annual savings potential</span>
+                    </div>
+                </div>
+                <div style="display: inline-block; margin: 10px;">
+                    <div class="stat-card">
+                        <span class="stat-number">60%</span>
+                        <span class="stat-label">Faster development</span>
+                    </div>
+                </div>
+                <div style="display: inline-block; margin: 10px;">
+                    <div class="stat-card">
+                        <span class="stat-number">Zero</span>
+                        <span class="stat-label">Production risk</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple navigation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for navigation links
+            const navLinks = document.querySelectorAll('.navigation a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                const slides = document.querySelectorAll('.slide');
+                let currentSlide = 0;
+                
+                // Find current slide in viewport
+                slides.forEach((slide, index) => {
+                    const rect = slide.getBoundingClientRect();
+                    if (rect.top >= 0 && rect.top < window.innerHeight / 2) {
+                        currentSlide = index;
+                    }
+                });
+
+                // Navigate with arrow keys
+                if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+                    e.preventDefault();
+                    if (currentSlide < slides.length - 1) {
+                        slides[currentSlide + 1].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                    e.preventDefault();
+                    if (currentSlide > 0) {
+                        slides[currentSlide - 1].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

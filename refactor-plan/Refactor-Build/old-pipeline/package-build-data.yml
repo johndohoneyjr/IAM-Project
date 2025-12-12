@@ -1,0 +1,1037 @@
+# Pipeline Published at
+# https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=313
+# Documentation https://onestreamsoftware.atlassian.net/wiki/spaces/PF7/pages/3994222635/WIP+NextGen+Artifact+Promotion+Process+WIP
+# Platform and Operational Releases: https://onestreamsoftware.atlassian.net/wiki/spaces/RM/pages/3340632118/Platform+and+Operational+Releases
+
+pool:
+  name: $(default_pool)
+
+trigger: none
+
+resources:
+  pipelines:
+    # TODO: Remove once OneStreamPlatform and IAM Container build pipelines produce image artifacts
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=547
+    - pipeline: package_internal_sources
+      source: package-container-images
+      trigger: true
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=593
+    - pipeline: kubernetes_linting
+      source: kubernetes-linting
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=589
+    - pipeline: iac_source_build
+      source: genesis-pr-linting
+      trigger:
+        branches:
+          include:
+            - refs/tags/release/*
+            - release/*
+
+    # TODO: Template OneStream Platform Packaging Sources
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=522
+    - pipeline: wcf_source_build
+      source: AKS Build platform
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=523
+    - pipeline: wcf_container_build
+      source: AKS Container wcf-service
+      trigger:
+        branches:
+          include:
+            - "*"
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=622
+    - pipeline: wcf_infrastructure_build
+      source: aks-tenant-resource-build
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=542
+    - pipeline: wcf_service_deploy
+      source: aks-ds-customer-config-dev - GitVersion Tagging
+
+    # TODO: Template IAM Packaging Sources
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=581
+    - pipeline: iam_source_build
+      source: iam-service
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=582
+    - pipeline: iam_container_build
+      source: iam-service container
+      trigger:
+        branches:
+          include:
+            - "*"
+            - refs/tags/*
+
+    # TODO: Template AISG Packaging Sources
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=689
+    - pipeline: aisg_container_build
+      source: aisg-gh-repo-sync  # Source Build for AISG and Wernike Container Build
+      trigger:
+        branches:
+          include:
+            - "*"
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=442
+    - pipeline: aisg_phoenix_container_build
+      source: aisg-phoenix-build  # Additional AISG container build - uses version defined in aisg_container_build
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=608
+    - pipeline: aisg_infrastructure_build
+      source: aisg-genai-azure-resources-build
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=605
+    - pipeline: aisg_genai_application_build
+      source: aisg-genai-application-build
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=766
+    - pipeline: sensibleai-agents-linting
+      source: sensibleai-agents-linting
+
+    # AKS Utility Service
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=693
+    - pipeline: aks_utility_service_build
+      source: aks-utility-service-build
+
+    ### PIPELINE URL: https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build?definitionId=694
+    - pipeline: aks_utility_service_container
+      source: aks-utility-service-container
+      trigger:
+        branches:
+          include:
+            - "*"
+
+    # END DEDICATED BUILD, PACKAGING AND PUBLISHING PROCESSES
+
+parameters:
+  - name: release_build_data
+    type: boolean
+    displayName: Package build data for release to an environment
+    default: false
+  - name: package_internal_sources
+    type: boolean
+    displayName: Package Internal Service Sources
+    default: true
+  - name: update_latest_stable_versions
+    type: boolean
+    displayName: Update Latest and Stable Versions in Metadata Repositories
+    default: false
+  - name: service_name
+    displayName: service to target
+    type: string
+    default: iac
+    values:
+      - iac
+      - onestream
+      - aisg
+      - iam
+      - utility
+      - cls
+
+  - name: services
+    type: object
+    default:
+      - name: iac
+      - name: onestream
+      - name: iam
+      - name: aisg
+      - name: utility
+      - name: cls
+
+  - name: package_external_sources
+    type: boolean
+    displayName: Package External Service Sources
+    default: false
+
+  - name: external_service_name
+    displayName: external service to target
+    type: string
+    default: argo-cd
+    values:
+      - argo-cd
+      - argo-workflows
+      - external-secrets
+      - ingress-nginx
+      - cert-manager
+      - linkerd-control-plane
+      - linkerd-crds
+      - dynatrace-operator
+      - opentelemetry-collector
+      - keda
+
+  - name: external_services
+    type: object
+    default:
+      - name: argo-cd
+      - name: argo-workflows
+      - name: external-secrets
+      - name: ingress-nginx
+      - name: cert-manager
+      - name: linkerd-control-plane
+      - name: linkerd-crds
+      - name: dynatrace-operator
+      - name: opentelemetry-collector
+      - name: keda
+
+variables:
+  - template: pipeline_vars.yml
+    parameters:
+      environment: onestreamplatformeng  # This is only supported in the Development Org.
+      azure_cloud: AzureGlobal
+      build_type: dev  # This is always dev when deploying from OneStreamPlatform org - build type options 'com' and 'gov' are reserved for root pipelines only to enable deployment from OneStreamCloud.
+
+  - ${{ if parameters.release_build_data }}:
+      - name: deploy_blob
+        value: release
+  - ${{ else }}:
+      - name: deploy_blob
+        value: deploy
+
+name: Package Latest Build Artifacts
+appendCommitMessageToRunName: false
+
+stages:
+  - stage: verify_release_prerequisites
+    displayName: Verify Release Prerequisites
+    condition: and(
+        eq('${{ parameters.release_build_data }}', 'true'),
+        eq('${{ parameters.service_name }}', 'iac'),
+        eq('${{ parameters.package_internal_sources }}', 'true'),
+        eq('${{ parameters.package_external_sources }}', 'false')
+      )
+    jobs:
+      - job: verify_semver_tag
+        displayName: Verify IAC Source Semver Tag
+        steps:
+          - task: Bash@3
+            displayName: Verify IAC Source Pipeline Semver Tag
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Release build data parameter: ${{ parameters.release_build_data }}"
+                echo "IAC source build run name: $(resources.pipeline.iac_source_build.runName)"
+                echo "IAC source build source branch: $(resources.pipeline.iac_source_build.sourceBranch)"
+
+                # Check if iac_source_build was run from a proper semver tag
+                RUN_NAME="$(resources.pipeline.iac_source_build.runName)"
+
+                # Check if run name contains '+' or '-' (indicating pre-release or build metadata)
+                if [[ "$RUN_NAME" == *"+"* ]] || [[ "$RUN_NAME" == *"-"* ]]; then
+                  echo "❌ Verification failed: IAC source build was not run from a proper semver tag"
+                  echo "Run name contains '+' or '-' indicating pre-release or build metadata: $RUN_NAME"
+                  echo "Release builds can only be created from clean semver tags"
+
+                  # Cancel the pipeline using Azure DevOps REST API
+                  echo "Attempting to cancel pipeline via REST API..."
+
+                  URI="$(System.TeamFoundationCollectionUri)$(System.TeamProject)/_apis/build/builds/$(Build.BuildId)?api-version=6.0"
+
+                  RESPONSE=$(curl -s -w "%{http_code}" -X PATCH \
+                    -H "Authorization: Bearer $(System.AccessToken)" \
+                    -H "Content-Type: application/json" \
+                    -d '{"status":"cancelling"}' \
+                    "$URI")
+
+                  HTTP_CODE="${RESPONSE: -3}"
+
+                  if [[ "$HTTP_CODE" == "200" ]]; then
+                    echo "Pipeline cancellation requested successfully"
+                    exit 0
+                  else
+                    echo "Failed to cancel pipeline via API (HTTP $HTTP_CODE), failing task instead"
+                    echo "##vso[task.logissue type=error]Pipeline canceled due to semver verification failure - IAC source build was not run from a clean semver tag"
+                    exit 1
+                  fi
+                else
+                  echo "✅ Verification passed: IAC source build was run from a clean semver tag: $RUN_NAME"
+                  exit 0
+                fi
+
+  - stage: package_build_data
+    ${{ if parameters.release_build_data }}:
+      displayName: Package Build Data
+    ${{ else }}:
+      displayName: Release Build Data
+    dependsOn:
+      - ${{ if and(eq(parameters.release_build_data, true), eq(parameters.service_name, 'iac'), eq(parameters.package_internal_sources, true)) }}:
+        - verify_release_prerequisites
+    condition: and(
+        succeeded(),
+        eq('${{ parameters.package_internal_sources }}', 'true'),
+        eq('${{ parameters.package_external_sources }}', 'false')
+      )
+    jobs:
+      - job: build_number
+        steps:
+          - task: Bash@3
+            displayName: Output Pipeline Metadata
+            inputs:
+              targetType: 'inline'
+              script: |
+                export properties="RUNNAME|RUNID|RUNURI|SOURCEBRANCH|SOURCECOMMIT|SOURCEPROVIDER|REQUESTEDFOR|REQUESTEDFORID"
+                printenv | grep -P "RESOURCES_PIPELINE_.*_($properties)" | sort | column -s'=' -N'Name,Value' --table
+
+          - task: Bash@3
+            displayName: Compute Triggering Version
+            name: compute_triggering_version
+            inputs:
+              targetType: inline
+              script: |
+                triggering_alias=$RESOURCE_TRIGGERINGALIAS
+                triggering_version=''
+                if [[ -n "$triggering_alias" && "$triggering_alias" != "$$(Resource.TriggeringAlias)" ]]; then
+                  # Get version string from triggering run name
+                  triggering_alias=${triggering_alias/-/_}
+                  triggering_alias=${triggering_alias^^}
+                  pipeline_runname="RESOURCES_PIPELINE_${triggering_alias}_RUNNAME"
+                  triggering_version="${!pipeline_runname}"
+                else
+                  # Use service_name to get appropriate version
+                  case "${{ parameters.service_name }}" in
+                    "cls")
+                      triggering_version=$(resources.pipeline.package_internal_sources.runName)
+                      ;;
+                    "iac")
+                      triggering_version=$(resources.pipeline.iac_source_build.runName)
+                      ;;
+                    "utility")
+                      triggering_version=$(resources.pipeline.aks_utility_service_container.runName)
+                      ;;
+                    "iam")
+                      triggering_version=$(resources.pipeline.iam_container_build.runName)
+                      ;;
+                    "onestream")
+                      triggering_version=$(resources.pipeline.wcf_container_build.runName)
+                      ;;
+                    "aisg")
+                      triggering_version=$(resources.pipeline.aisg_container_build.runName)
+                      ;;
+                    *)
+                      echo "Unknown service_name: ${{ parameters.service_name }}"
+                      triggering_version="unknown"
+                      exit 1
+                      ;;
+                  esac
+                fi
+
+                echo "##vso[task.setvariable variable=triggering_version;isOutput=true]$triggering_version"
+                echo "##vso[task.setvariable variable=triggering_version_local;isOutput=true]$triggering_version"
+                echo "Computed triggering_version [$triggering_version]"
+            env:
+              RESOURCE_TRIGGERINGALIAS: $(Resources.TriggeringAlias)
+
+          - task: AzureCLI@2
+            displayName: Triggered Build Names
+            name: source
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              visibleAzLogin: false
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/triggered_build_names.sh
+              # argument order - build_reason service_name triggering_alias source_version
+              ${{ if eq(variables['Build.Reason'], 'Manual' ) }}:
+                arguments: >
+                  "$(Build.Reason)"
+                  "${{ parameters.service_name }}"
+                  "$(Resources.TriggeringAlias)"
+                  "$(compute_triggering_version.triggering_version_local)"
+              ${{ else }}:
+                arguments: >
+                  "$(Build.Reason)"
+                  "$(Resources.TriggeringAlias)"
+                  "$(Resources.TriggeringAlias)"
+                  "$(compute_triggering_version.triggering_version_local)"
+
+          - template: ./templates/build_number.yml
+            parameters:
+              artifact: package
+              version: "$(source.version) $(deploy_blob)"
+              service_name: $(source.trigger)
+
+      - ${{ each service in parameters.services }}:
+        - job: determine_${{ service.name }}_build_ids
+          displayName: "Determine Build IDs for ${{ service.name }}"
+          dependsOn: build_number
+          condition: and(
+              succeeded(),
+              eq(dependencies.build_number.outputs['source.trigger'], '${{ service.name }}')
+            )
+          variables:
+            triggering_version: $[ dependencies.build_number.outputs['compute_triggering_version.triggering_version'] ]
+          steps:
+            - ${{ if parameters.release_build_data }}:
+              - task: Bash@3
+                displayName: 'Set TARGET_PATH to release'
+                inputs:
+                  targetType: 'inline'
+                  script: |
+                    echo "##vso[task.setvariable variable=TARGET_PATH]release"
+            - ${{ else }}:
+                - task: Bash@3
+                  displayName: 'Set TARGET_PATH to deploy'
+                  inputs:
+                    targetType: 'inline'
+                    script: |
+                      echo "##vso[task.setvariable variable=TARGET_PATH]deploy"
+            - checkout: self
+              fetchDepth: 1
+              sparseCheckoutDirectories: .azure-pipelines/
+
+            - task: AzureCLI@2
+              displayName: Download Git Repos
+              condition: succeeded()
+              retryCountOnTaskFailure: 1
+              inputs:
+                azureSubscription: $(environmentServiceNameAzureRM)
+                visibleAzLogin: false
+                scriptType: pscore
+                scriptLocation: scriptPath
+                workingDirectory: $(Build.SourcesDirectory)
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/download_repos.ps1
+                arguments: >
+                  -DevopsOrg onestreamplatformeng
+                  -DevopsProject "$(IaC_Project)"
+                  -WorkingDirectory "$(System.DefaultWorkingDirectory)"
+                  -BuildType dev
+                  -DSBranch main
+                  -SourceBranch main
+                  -MetadataRepositoryURl $(metadata_repository_url)
+                  -MetadataReleaseRepositoryURl $(release_metadata_repository_url)
+                  -HelmRepositoryURl $(helm_repository_url)
+                  -CustomerRepositoryURL $(customer_repository_url)
+                  -RepositoryName "$(IaC)"
+              env:
+                SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+            - bash: |
+                #!/bin/bash
+                set -e
+
+                export LOG_LEVEL=${LOG_LEVEL:-2}
+                echo "Determining build IDs for service: $SERVICE_NAME"
+                echo "Triggering version: $TRIGGERING_VERSION"
+
+                # Source the build_metadata_manager.sh script
+                echo "running the build_metadata_manager script"
+                bash "$BUILD_SOURCESDIRECTORY/.azure-pipelines/scripts/build_metadata_manager.sh" "$SERVICE_NAME" "$TRIGGERING_VERSION"
+
+              displayName: "Run build_metadata_manager for ${{ service.name }}"
+              name: SetBuildIds
+              env:
+                BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+                SYSTEM_DEFAULTWORKINGDIRECTORY: $(System.DefaultWorkingDirectory)
+                AZURE_DEVOPS_PAT: $(System.AccessToken)
+                SERVICE_NAME: ${{ service.name }}
+                TRIGGERING_VERSION: $(triggering_version)
+                LOG_LEVEL: 2
+                IaC: $(IaC)
+                TARGET_PATH: $(TARGET_PATH)
+
+            - task: AzureCLI@2
+              displayName: Commit Build Data to $(Metadata)
+              retryCountOnTaskFailure: 2
+              inputs:
+                azureSubscription: $(repoServiceArm)
+                workingDirectory: "$(System.DefaultWorkingDirectory)/$(Metadata)/"
+                visibleAzLogin: false
+                scriptType: bash
+                scriptLocation: scriptPath
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/git_commit_datastores.sh
+                arguments: >
+                  $(System.TeamFoundationCollectionUri)
+                  "main"
+                  "package-build-data:$(triggering_version)-$(Build.BuildId)"
+                  "$(triggering_version)-$(Build.BuildId)"
+              env:
+                AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+
+        - job: package_${{ service.name }}_build_data
+          dependsOn:
+            - determine_${{ service.name }}_build_ids
+            - build_number
+          variables:
+            triggering_version: $[ dependencies.build_number.outputs['compute_triggering_version.triggering_version'] ]
+            effective_${{ service.name }}_source_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_source_build_id'] ]
+            effective_${{ service.name }}_chart_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_chart_build_id'] ]
+            effective_${{ service.name }}_container_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_container_build_id'] ]
+            effective_${{ service.name }}_container_artifact_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_container_artifact_build_id'] ]
+            effective_${{ service.name }}_infrastructure_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_infrastructure_build_id'] ]
+            effective_${{ service.name }}_service_build_id: $[ dependencies.determine_${{ service.name }}_build_ids.outputs['SetBuildIds.effective_${{ service.name }}_service_build_id'] ]
+            effective_${{ service.name }}_published_version: $[ dependencies.determine_${{ service.name }}_published_version.outputs['SetBuildIds.effective_${{ service.name }}_published_version'] ]
+          displayName: "Publish ${{ service.name }} ${{ variables.build_type_label }} Build Data"
+          condition: and(
+            succeeded(),
+            or(
+              and(
+                eq('${{ service.name }}', 'cls'), eq(dependencies.build_number.outputs['source.trigger'], 'cls')
+              ),
+              and(
+                ne('${{ service.name }}', 'cls'),
+                or(
+                    eq(dependencies.build_number.outputs['source.trigger'], '${{ service.name }}'),
+                    eq(dependencies.build_number.outputs['source.version'], 'latest')
+                  )
+                )
+              )
+            )
+          steps:
+          - checkout: self
+            fetchDepth: 1
+            path: s
+          - task: AzureCLI@2
+            displayName: Download Git Repos
+            condition: succeeded()
+            retryCountOnTaskFailure: 1
+            inputs:
+              azureSubscription: $(environmentServiceNameAzureRM)
+              visibleAzLogin: false
+              scriptType: pscore
+              scriptLocation: scriptPath
+              workingDirectory: $(Build.SourcesDirectory)
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/download_repos.ps1
+              arguments: >
+                -DevopsOrg onestreamplatformeng
+                -DevopsProject "$(IaC_Project)"
+                -WorkingDirectory "$(System.DefaultWorkingDirectory)"
+                -BuildType dev
+                -DSBranch main
+                -SourceBranch main
+                -MetadataRepositoryURl $(metadata_repository_url)
+                -MetadataReleaseRepositoryURl $(release_metadata_repository_url)
+                -HelmRepositoryURl $(helm_repository_url)
+                -CustomerRepositoryURL $(customer_repository_url)
+                -RepositoryName "$(IaC)"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          - bash: |
+              echo "Setting execute permissions on scripts"
+              chmod -R +x $BUILD_SOURCESDIRECTORY/.azure-pipelines/scripts/
+              ls -la $BUILD_SOURCESDIRECTORY/.azure-pipelines/scripts
+            displayName: 'Fix Script Permissions'
+            env:
+              BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+
+          - ${{ if parameters.release_build_data }}:
+            - task: Bash@3
+              displayName: 'Set TARGET_PATH to release'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "##vso[task.setvariable variable=TARGET_PATH]release"
+
+          - ${{ else }}:
+            - task: Bash@3
+              displayName: 'Set TARGET_PATH to deploy'
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "##vso[task.setvariable variable=TARGET_PATH]deploy"
+
+          # Packaging Artifacts from onestream-xf-platform, SensibleLLM-Wernicke, SensibleLLM-Phoenix, onestream-iam source builds
+          - task: Bash@3
+            displayName: "Dump and sort all pipeline variables"
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "environment variables sorted alphabetically: "
+                printenv | sort
+
+          - task: Bash@3
+            displayName: "set published_version"
+            name: "published_version"
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "triggering_version is $TRIGGERING_VERSION"
+                echo "##vso[task.setvariable variable=buildNumber;isOutput=true]$TRIGGERING_VERSION"
+            env:
+              TRIGGERING_VERSION: $(triggering_version)
+
+          - template: ./templates/package_build_artifacts.yml
+            parameters:
+              target_blob: $(deploy_blob)
+              service_name: ${{ service.name }}
+
+          # Queue platform pipeline
+          - template: ./templates/pipeline_queue_from_platform_no_wait.yml
+            parameters:
+              organization: $(System.TeamFoundationCollectionUri)
+              project: $(IaC_Project)
+              pipeline_definition_id: 580
+              infrastructure_branch: main
+              pipeline_parameters: '"service_name=${{ service.name }}" "published_version=$(triggering_version)" "release_build_data=${{ parameters.release_build_data }}"'
+              artifact_name: ${{ service.name }}
+
+          # Add build tags
+          - task: AddBuildTags@0
+
+  - stage: latest_build_data
+    condition: and(
+        succeeded(),
+        eq('${{ parameters.update_latest_stable_versions }}', 'true'),
+        eq('${{ parameters.package_external_sources }}', 'false')
+      )
+    displayName: Latest Build Data
+    jobs:
+      - job: latest_build_data
+        displayName: Latest Build Data
+        steps:
+          - checkout: self
+            fetchTags: true
+
+          - task: AzureCLI@2
+            displayName: Download Git Repos
+            # TODO: Create bug for TLS Failures https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform/_build/results?buildId=174378&view=logs&j=5e3f71d9-caec-5efb-4cc9-fbb2d8dae502&t=8dda8c5b-1c2f-5952-ac4c-b797be66f0c9&l=157
+            retryCountOnTaskFailure: 1
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              visibleAzLogin: false
+              scriptType: pscore
+              scriptLocation: scriptPath
+              workingDirectory: $(Build.SourcesDirectory)
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/download_repos.ps1
+              arguments: >
+                -DevopsOrg onestreamplatformeng
+                -DevopsProject $(IaC_Project)
+                -WorkingDirectory $(System.DefaultWorkingDirectory)
+                -BuildType dev
+                -DSBranch main
+                -SourceBranch develop
+                -MetadataRepositoryURl $(metadata_repository_url)
+                -HelmRepositoryURl $(helm_repository_url)
+                -CustomerRepositoryURL $(customer_repository_url)
+                -RepositoryName $(IaC)
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          - task: Bash@3
+            displayName: Update Pipeline Variables for iac
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'iac'), not(contains(variables['resources.pipeline.iac_source_build.runName'], '+')), not(contains(variables['resources.pipeline.iac_source_build.runName'], '-')))
+            inputs:
+              targetType: filePath
+              filePath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/update_pipeline_vars.sh
+              workingDirectory: $(Build.SourcesDirectory)
+              # arg1: build number (version)
+              # arg2: release_build_data (true/false)
+              # arg3: source branch (fetch from remote)
+              # arg4: new branch name (based on build ID)
+              # arg5: file name
+              # arg6: semver parameter key
+              arguments: >
+                "$(resources.pipeline.iac_source_build.runName)"
+                "${{ lower(parameters.release_build_data) }}"
+                "develop"
+                "IaC-$(resources.pipeline.iac_source_build.runName)"
+                "pipeline_vars.yml"
+                "cloud_artifact_semver"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          - task: AzureCLI@2
+            displayName: Commit Changes to Pipeline Vars for IAC and Create PR
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'iac'), not(contains(variables['resources.pipeline.iac_source_build.runName'], '+')), not(contains(variables['resources.pipeline.iac_source_build.runName'], '-')))
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              workingDirectory: $(Build.SourcesDirectory)
+              visibleAzLogin: false
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/create_pull_request.sh
+              # arg1: source branch
+              # arg2: target branch
+              arguments: >
+                "IaC-$(resources.pipeline.iac_source_build.runName)"
+                "develop"
+            env:
+              AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              BUILD_VERSION: $(resources.pipeline.iac_source_build.runName)
+              BUILD_BUILDID: $(Build.BuildId)
+              SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
+
+          - task: Bash@3
+            displayName: Update Pipeline vars for onestream
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'onestream'))
+            inputs:
+              targetType: filePath
+              filePath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/update_pipeline_vars.sh
+              workingDirectory: $(Build.SourcesDirectory)
+              # arg1: build number (version)
+              # arg2: release_build_data (true/false)
+              # arg3: source branch (fetch from remote)
+              # arg4: new branch name (based on build ID)
+              # arg5: file name
+              # arg6: semver parameter key
+              arguments: >
+                "$(resources.pipeline.wcf_container_build.runName)"
+                "${{ lower(parameters.release_build_data) }}"
+                "develop"
+                "onestream-$(resources.pipeline.wcf_container_build.runName)"
+                "aks-tenant-application-deploy.yml"
+                "service_container_build_id"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          - task: AzureCLI@2
+            displayName: Create PR OnsStream Version Update
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'onestream'))
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              workingDirectory: $(Build.SourcesDirectory)
+              visibleAzLogin: false
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/create_pull_request.sh
+              # arg1: source branch
+              # arg2: target branch
+              arguments: >
+                "onestream-$(resources.pipeline.wcf_container_build.runName)"
+                "develop"
+            env:
+              AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              BUILD_VERSION: $(resources.pipeline.wcf_container_build.runName)
+              BUILD_BUILDID: $(Build.BuildId)
+              SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
+
+          - task: Bash@3
+            displayName: Update Pipeline Variables for IAM
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'iam'))
+            inputs:
+              targetType: filePath
+              filePath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/update_pipeline_vars.sh
+              workingDirectory: $(Build.SourcesDirectory)
+              # arg1: build number (version)
+              # arg2: release_build_data (true/false)
+              # arg3: source branch (fetch from remote)
+              # arg4: new branch name (based on build ID)
+              # arg5: file name
+              # arg6: semver parameter key
+              arguments: >
+                "$(resources.pipeline.iam_container_build.runName)"
+                "${{ lower(parameters.release_build_data) }}"
+                "develop"
+                "iam-$(resources.pipeline.iam_container_build.runName)"
+                "aks-iam-service-application-deploy.yml"
+                "service_container_build_id"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+          - task: AzureCLI@2
+            displayName: Create PR IAM Version Update
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'iam'))
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              workingDirectory: $(Build.SourcesDirectory)
+              visibleAzLogin: false
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/create_pull_request.sh
+              # arg1: source branch
+              # arg2: target branch
+              arguments: >
+                "iam-$(resources.pipeline.iam_container_build.runName)"
+                "develop"
+            env:
+              AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              BUILD_VERSION: $(resources.pipeline.iam_container_build.runName)
+              BUILD_BUILDID: $(Build.BuildId)
+              SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
+
+          - task: Bash@3
+            displayName: Update Pipeline Variables for aisg
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'aisg'))
+            inputs:
+              targetType: filePath
+              filePath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/update_pipeline_vars.sh
+              workingDirectory: $(Build.SourcesDirectory)
+              # arg1: build number (version)
+              # arg2: release_build_data (true/false)
+              # arg3: source branch (fetch from remote)
+              # arg4: new branch name (based on build ID)
+              # arg5: file name
+              # arg6: semver parameter key
+              arguments: >
+                "$(resources.pipeline.aisg_container_build.runName)"
+                "${{ lower(parameters.release_build_data) }}"
+                "develop"
+                "aisg-$(resources.pipeline.aisg_container_build.runName)"
+                "aisg-genai-application-deploy.yml"
+                "service_container_build_id"
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+
+          - task: AzureCLI@2
+            displayName: Commit Changes to Pipeline Vars and Create PR
+            condition: and(succeeded(), eq('${{ parameters.service_name }}', 'aisg'))
+            inputs:
+              azureSubscription: $(backendServiceArm)
+              workingDirectory: $(Build.SourcesDirectory)
+              visibleAzLogin: false
+              scriptType: bash
+              scriptLocation: scriptPath
+              scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/create_pull_request.sh
+              # arg1: source branch
+              # arg2: target branch
+              arguments: >
+                "aisg-$(resources.pipeline.aisg_container_build.runName)"
+                "develop"
+            env:
+              AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+              BUILD_VERSION: $(resources.pipeline.aisg_container_build.runName)
+              BUILD_BUILDID: $(Build.BuildId)
+              SYSTEM_TEAMFOUNDATIONCOLLECTIONURI: $(System.TeamFoundationCollectionUri)
+
+          # - task: AddBuildTags@0
+
+  # External Sources Packaging Stage
+  # Packages third-party Helm charts and Images for external services
+
+  - stage: package_external_sources
+    displayName: Package External Sources
+    condition: and(
+        eq('${{ parameters.package_external_sources }}', 'true'),
+        eq('${{ parameters.package_internal_sources }}', 'false')
+      )
+    jobs:
+      - ${{ each external_service in parameters.external_services }}:
+        - job: package_${{ replace(external_service.name, '-', '_') }}_external_source
+          displayName: "Package ${{ external_service.name }} External Source"
+          condition: eq('${{ parameters.external_service_name }}', '${{ external_service.name }}')
+          steps:
+            - checkout: self
+              fetchDepth: 1
+              sparseCheckoutDirectories: .azure-pipelines/
+
+            - task: AzureCLI@2
+              displayName: Download Git Repos
+              retryCountOnTaskFailure: 1
+              inputs:
+                azureSubscription: $(environmentServiceNameAzureRM)
+                visibleAzLogin: false
+                scriptType: pscore
+                scriptLocation: scriptPath
+                workingDirectory: $(Build.SourcesDirectory)
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/download_repos.ps1
+                arguments: >
+                  -DevopsOrg onestreamplatformeng
+                  -DevopsProject "$(IaC_Project)"
+                  -WorkingDirectory "$(System.DefaultWorkingDirectory)"
+                  -BuildType dev
+                  -DSBranch main
+                  -SourceBranch main
+                  -MetadataRepositoryURl $(metadata_repository_url)
+                  -MetadataReleaseRepositoryURl $(release_metadata_repository_url)
+                  -HelmRepositoryURl $(helm_repository_url)
+                  -CustomerRepositoryURL $(customer_repository_url)
+                  -RepositoryName "$(IaC)"
+              env:
+                SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+            - task: HelmInstaller@1
+              displayName: Install Helm
+
+            - task: CmdLine@2
+              displayName: Install Aquasec Trivy from Source
+              inputs:
+                script: |
+                  sudo apt-get install wget apt-transport-https gnupg lsb-release
+                  wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+                  echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+                  sudo apt-get update
+                  sudo apt-get install trivy
+                  trivy -v
+                  pwd
+
+            - task: AzureCLI@2
+              displayName: Package ${{ external_service.name }}
+              name: PackageExternalService
+              inputs:
+                azureSubscription: $(environmentServiceNameAzureRM)
+                visibleAzLogin: false
+                scriptType: bash
+                scriptLocation: scriptPath
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/helm_package_external_sources.sh
+                arguments: >
+                  "${{ external_service.name }}"
+                  "$(System.DefaultWorkingDirectory)/$(Metadata)/development/acr_artifacts/infrastructure_acr.json"
+
+            - task: PublishBuildArtifacts@1
+              condition: succeeded()
+              displayName: Publish ${{ external_service.name }} CodeAnalysisLogs Results
+              inputs:
+                artifactName: CodeAnalysisLogs
+                PathtoPublish: $(Build.ArtifactStagingDirectory)/CodeAnalysisLogs/
+
+            - task: PublishBuildArtifacts@1
+              condition: succeeded()
+              displayName: Publish ${{ external_service.name }} helm artifacts
+              inputs:
+                artifactName: ${{ external_service.name }}
+                PathtoPublish: $(Build.ArtifactStagingDirectory)/${{ external_service.name }}/
+
+            - task: Bash@3
+              displayName: "set published_version for ${{ external_service.name }}"
+              name: "published_version"
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "external service version is $EXTERNAL_VERSION"
+                  echo "##vso[task.setvariable variable=buildNumber;isOutput=true]$EXTERNAL_VERSION"
+              env:
+                EXTERNAL_VERSION: $(PackageExternalService.version)
+
+            - task: AzureCLI@2
+              displayName: Generate Checksum for ${{ external_service.name }}
+              name: generate_checksum
+              inputs:
+                azureSubscription: $(backendServiceArm)
+                visibleAzLogin: false
+                scriptType: pscore
+                failOnStandardError: false
+                powerShellIgnoreLASTEXITCODE: false
+                powerShellErrorActionPreference: continue
+                scriptLocation: scriptPath
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/generate_checksum.ps1
+              env:
+                WORKING_DIR: $(Build.ArtifactStagingDirectory)/${{ external_service.name }}
+
+            - task: AzureCLI@2
+              displayName: Upload ${{ external_service.name }} artifacts to blob storage
+              retryCountOnTaskFailure: 2
+              inputs:
+                azureSubscription: $(backendServiceArm)
+                visibleAzLogin: false
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  echo "Uploading ${{ external_service.name }} version $(PackageExternalService.version) artifacts"
+
+                  # Create a temporary directory with the correct structure
+                  TEMP_DIR="$(Agent.TempDirectory)/upload-structure"
+                  mkdir -p "$TEMP_DIR"
+
+                  # Copy contents to temp directory with correct structure
+                  if [ -d "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/charts" ]; then
+                    cp -r "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/charts" "$TEMP_DIR/"
+                  fi
+
+                  if [ -d "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/containers" ]; then
+                    cp -r "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/containers" "$TEMP_DIR/"
+                  fi
+
+                  if [ -f "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/checksum" ]; then
+                    cp "$(Build.ArtifactStagingDirectory)/${{ external_service.name }}/checksum" "$TEMP_DIR/"
+                  fi
+
+                  # Upload the contents of the temp directory
+                  cd "$TEMP_DIR"
+                  for item in *; do
+                    if [ -e "$item" ]; then
+                      az storage copy \
+                        --source "$item" \
+                        --destination 'https://$(source_artifact_storage).blob.core.windows.net/artifacts/${{ external_service.name }}/$(PackageExternalService.version)/' \
+                        --recursive
+                    fi
+                  done
+
+                  # Clean up temp directory
+                  rm -rf "$TEMP_DIR"
+
+            - task: Bash@3
+              displayName: Prepare metadata repository structure for ${{ external_service.name }}
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "=== PREPARING METADATA REPOSITORY STRUCTURE ==="
+                  echo "External service: ${{ external_service.name }}"
+                  echo "Version: $(PackageExternalService.version)"
+                  echo "Deploy blob: $(deploy_blob)"
+
+                  # Verify metadata repository exists
+                  METADATA_ROOT="$(System.DefaultWorkingDirectory)/$(Metadata)"
+                  echo "Metadata repository root: $METADATA_ROOT"
+                  if [ ! -d "$METADATA_ROOT" ]; then
+                    echo "ERROR: Metadata repository not found at $METADATA_ROOT"
+                    exit 1
+                  fi
+
+                  # Create deploy blob directory if it doesn't exist
+                  DEPLOY_DIR="$METADATA_ROOT/$(deploy_blob)"
+                  echo "Deploy directory: $DEPLOY_DIR"
+                  mkdir -p "$DEPLOY_DIR"
+
+                  # Create service version directory
+                  TARGET_DIR="$DEPLOY_DIR/${{ external_service.name }}/$(PackageExternalService.version)"
+                  echo "Target directory: $TARGET_DIR"
+                  mkdir -p "$TARGET_DIR"
+
+                  # Verify everything was created
+                  echo "Deploy directory contents:"
+                  ls -la "$DEPLOY_DIR"
+
+                  echo "Target directory exists and is accessible:"
+                  ls -la "$TARGET_DIR"
+
+                  echo "=== METADATA STRUCTURE READY ==="
+
+            - task: Bash@3
+              displayName: Verify checksum file exists for ${{ external_service.name }}
+              inputs:
+                targetType: 'inline'
+                script: |
+                  echo "=== VERIFYING CHECKSUM FILE ==="
+
+                  SOURCE_DIR="$(Build.ArtifactStagingDirectory)/${{ external_service.name }}"
+                  CHECKSUM_FILE="$SOURCE_DIR/checksum"
+
+                  echo "Source directory: $SOURCE_DIR"
+                  echo "Expected checksum file: $CHECKSUM_FILE"
+
+                  if [ ! -d "$SOURCE_DIR" ]; then
+                    echo "ERROR: Source directory doesn't exist!"
+                    exit 1
+                  fi
+
+                  echo "Source directory contents:"
+                  ls -la "$SOURCE_DIR"
+
+                  if [ ! -f "$CHECKSUM_FILE" ]; then
+                    echo "ERROR: Checksum file doesn't exist at $CHECKSUM_FILE"
+                    echo "Available files in source directory:"
+                    find "$SOURCE_DIR" -type f
+                    exit 1
+                  fi
+
+                  echo "✅ Checksum file verified:"
+                  ls -la "$CHECKSUM_FILE"
+                  echo "Checksum content:"
+                  cat "$CHECKSUM_FILE"
+
+            - task: AzureCLI@2
+              displayName: Commit Checksum to $(Metadata) for ${{ external_service.name }}
+              name: commit_checksum
+              inputs:
+                azureSubscription: $(backendServiceArm)
+                workingDirectory: "$(System.DefaultWorkingDirectory)/$(Metadata)"
+                visibleAzLogin: false
+                scriptType: bash
+                scriptLocation: scriptPath
+                scriptPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/git_commit_checksum.sh
+                # params in order for below | repo organization | target branch | commit message | commit tag
+                arguments: $(System.TeamFoundationCollectionUri) main "package-build-data:${{ external_service.name }}-checksum" "$(PackageExternalService.version)-$(Build.BuildId)"
+              env:
+                SOURCE_DIR: $(Build.ArtifactStagingDirectory)/${{ external_service.name }}  # sourcedir where checksum is located
+                REPO_TARGET_PATH: $(System.DefaultWorkingDirectory)/$(Metadata)/$(deploy_blob)/${{ external_service.name }}/$(PackageExternalService.version)  # destpath where checksum is headed
+                CHECKSUM_FILENAME: checksum  # filename in case this changes ever
+
+            # Queue platform pipeline
+            - template: ./templates/pipeline_queue_from_platform_no_wait.yml
+              parameters:
+                organization: $(System.TeamFoundationCollectionUri)
+                project: $(IaC_Project)
+                pipeline_definition_id: 580
+                infrastructure_branch: CL1000-11086c #main
+                pipeline_parameters: '"service_name=${{ external_service.name }}" "published_version=$(PackageExternalService.version)" "release_build_data=${{ parameters.release_build_data }}"'
+                pipeline_variables: ''
+                artifact_name: ${{ external_service.name }}

@@ -1,0 +1,160 @@
+# Build Container Template
+# Reusable template for building container images with digest capture
+
+parameters:
+- name: serviceName
+  type: string
+- name: containerRegistry
+  type: string
+- name: buildConfiguration
+  type: string
+  default: 'Release'
+- name: dockerfile
+  type: string
+  default: 'Dockerfile'
+- name: buildArgs
+  type: object
+  default: {}
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Build Container Image'
+  name: buildContainer
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      echo "Building container for service: ${{ parameters.serviceName }}"
+      echo "Registry: ${{ parameters.containerRegistry }}"
+      echo "Build configuration: ${{ parameters.buildConfiguration }}"
+      echo "Dockerfile: ${{ parameters.dockerfile }}"
+      
+      # Prepare build arguments
+      BUILD_ARGS=""
+      ${{ each arg in parameters.buildArgs }}:
+      BUILD_ARGS="$BUILD_ARGS --build-arg ${{ arg.key }}=${{ arg.value }}"
+      
+      # Build image with temporary tag
+      TEMP_TAG="${{ parameters.serviceName }}:build-$(Build.BuildId)"
+      
+      echo "Building with temporary tag: $TEMP_TAG"
+      
+      az acr build \
+        --registry ${{ parameters.containerRegistry }} \
+        --image $TEMP_TAG \
+        --file ${{ parameters.dockerfile }} \
+        $BUILD_ARGS \
+        --platform linux/amd64 \
+        .
+      
+      # Get the immutable digest
+      echo "Retrieving image digest..."
+      DIGEST=$(az acr repository show \
+        --name ${{ parameters.containerRegistry }} \
+        --image $TEMP_TAG \
+        --query "digest" -o tsv)
+      
+      if [ -z "$DIGEST" ]; then
+        echo "❌ Failed to retrieve image digest"
+        exit 1
+      fi
+      
+      echo "✅ Successfully built image with digest: $DIGEST"
+      echo "Image reference: ${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@$DIGEST"
+      
+      # Output variables for subsequent stages
+      echo "##vso[task.setvariable;variable=IMAGE_DIGEST;isOutput=true]$DIGEST"
+      echo "##vso[task.setvariable;variable=IMAGE_TAG;isOutput=true]$TEMP_TAG"
+      echo "##vso[task.setvariable;variable=FULL_IMAGE_REF;isOutput=true]${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@$DIGEST"
+      
+      # Add build tags for tracking
+      az acr repository untag \
+        --name ${{ parameters.containerRegistry }} \
+        --image ${{ parameters.serviceName }}:latest || true
+      
+      # Tag with latest and build number for human readability
+      az acr import \
+        --name ${{ parameters.containerRegistry }} \
+        --source ${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@$DIGEST \
+        --image ${{ parameters.serviceName }}:latest \
+        --image ${{ parameters.serviceName }}:$(Build.BuildNumber)
+      
+      echo "✅ Tagged image with latest and build number for convenience"
+
+- task: AzureCLI@2
+  displayName: 'Scan Image for Vulnerabilities'
+  condition: succeededOrFailed()
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      IMAGE_REF="${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@$(buildContainer.IMAGE_DIGEST)"
+      
+      echo "Scanning image for vulnerabilities: $IMAGE_REF"
+      
+      # Install Trivy
+      sudo apt-get update
+      sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+      wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+      echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+      sudo apt-get update
+      sudo apt-get install trivy -y
+      
+      # Authenticate to ACR for Trivy
+      az acr login --name ${{ parameters.containerRegistry }}
+      
+      # Run vulnerability scan
+      echo "Running Trivy scan..."
+      trivy image \
+        --format json \
+        --output trivy-results.json \
+        --severity HIGH,CRITICAL \
+        $IMAGE_REF
+      
+      # Generate human-readable report
+      trivy image \
+        --format table \
+        --severity HIGH,CRITICAL \
+        $IMAGE_REF > trivy-report.txt
+      
+      # Check for critical vulnerabilities
+      CRITICAL_COUNT=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+      HIGH_COUNT=$(cat trivy-results.json | jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length')
+      
+      echo "Vulnerability scan results:"
+      echo "- Critical: $CRITICAL_COUNT"
+      echo "- High: $HIGH_COUNT"
+      
+      if [ "$CRITICAL_COUNT" -gt 0 ]; then
+        echo "❌ Critical vulnerabilities found - pipeline will fail"
+        cat trivy-report.txt
+        exit 1
+      elif [ "$HIGH_COUNT" -gt 10 ]; then
+        echo "⚠️ High number of high-severity vulnerabilities found"
+        cat trivy-report.txt
+        echo "##vso[task.logissue type=warning]High number of vulnerabilities detected"
+      else
+        echo "✅ Vulnerability scan passed"
+      fi
+
+- task: PublishTestResults@2
+  displayName: 'Publish Vulnerability Scan Results'
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: 'trivy-results.json'
+    testRunTitle: 'Container Vulnerability Scan - ${{ parameters.serviceName }}'
+    failTaskOnFailedTests: false
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Scan Reports'
+  condition: always()
+  inputs:
+    pathToPublish: 'trivy-report.txt'
+    artifactName: 'SecurityScanResults-${{ parameters.serviceName }}'

@@ -1,0 +1,177 @@
+# Cosign Container Signing Template
+# Signs container images using Cosign with Azure Key Vault integration
+
+parameters:
+- name: serviceName
+  type: string
+- name: containerRegistry
+  type: string
+- name: imageDigest
+  type: string
+- name: keyVaultName
+  type: string
+- name: signingKeyName
+  type: string
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Install Cosign'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      echo "Installing Cosign..."
+      
+      # Download and install cosign
+      COSIGN_VERSION="v2.2.0"
+      curl -O -L "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+      chmod +x cosign-linux-amd64
+      sudo mv cosign-linux-amd64 /usr/local/bin/cosign
+      
+      # Verify installation
+      cosign version
+      
+      echo "✅ Cosign installed successfully"
+
+- task: AzureCLI@2
+  displayName: 'Sign Container Image'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      IMAGE_REF="${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}"
+      KEY_REF="azurekms://${{ parameters.keyVaultName }}.vault.azure.net/${{ parameters.signingKeyName }}"
+      
+      echo "Signing image: $IMAGE_REF"
+      echo "Using key: $KEY_REF"
+      
+      # Authenticate to ACR
+      az acr login --name ${{ parameters.containerRegistry }}
+      
+      # Sign the image using Azure Key Vault
+      echo "Signing with Cosign..."
+      cosign sign \
+        --key $KEY_REF \
+        --tlog-upload=true \
+        $IMAGE_REF
+      
+      if [ $? -eq 0 ]; then
+        echo "✅ Successfully signed image: $IMAGE_REF"
+      else
+        echo "❌ Failed to sign image"
+        exit 1
+      fi
+
+- task: AzureCLI@2
+  displayName: 'Verify Signature'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      IMAGE_REF="${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}"
+      KEY_REF="azurekms://${{ parameters.keyVaultName }}.vault.azure.net/${{ parameters.signingKeyName }}"
+      
+      echo "Verifying signature for: $IMAGE_REF"
+      
+      # Verify the signature
+      cosign verify \
+        --key $KEY_REF \
+        $IMAGE_REF
+      
+      if [ $? -eq 0 ]; then
+        echo "✅ Signature verification successful"
+      else
+        echo "❌ Signature verification failed"
+        exit 1
+      fi
+
+- task: AzureCLI@2
+  displayName: 'Generate SLSA Provenance'
+  inputs:
+    azureSubscription: $(azureServiceConnection)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      set -e
+      
+      IMAGE_REF="${{ parameters.containerRegistry }}.azurecr.io/${{ parameters.serviceName }}@${{ parameters.imageDigest }}"
+      KEY_REF="azurekms://${{ parameters.keyVaultName }}.vault.azure.net/${{ parameters.signingKeyName }}"
+      
+      echo "Generating SLSA provenance for: $IMAGE_REF"
+      
+      # Create provenance data
+      cat > provenance.json << EOF
+      {
+        "_type": "https://in-toto.io/Statement/v0.1",
+        "predicateType": "https://slsa.dev/provenance/v0.2",
+        "subject": [
+          {
+            "name": "$IMAGE_REF",
+            "digest": {
+              "sha256": "${{ parameters.imageDigest }}"
+            }
+          }
+        ],
+        "predicate": {
+          "builder": {
+            "id": "https://dev.azure.com/OneStreamPlatformEng/OneStreamPlatform"
+          },
+          "buildType": "azure-pipelines",
+          "invocation": {
+            "configSource": {
+              "uri": "$(Build.Repository.Uri)",
+              "digest": {
+                "sha1": "$(Build.SourceVersion)"
+              }
+            }
+          },
+          "metadata": {
+            "buildInvocationId": "$(Build.BuildId)",
+            "buildStartedOn": "$(System.StageStartTime)",
+            "completeness": {
+              "parameters": true,
+              "environment": false,
+              "materials": true
+            },
+            "reproducible": false
+          },
+          "materials": [
+            {
+              "uri": "$(Build.Repository.Uri)",
+              "digest": {
+                "sha1": "$(Build.SourceVersion)"
+              }
+            }
+          ]
+        }
+      }
+      EOF
+      
+      # Attach provenance as attestation
+      cosign attest \
+        --predicate provenance.json \
+        --key $KEY_REF \
+        $IMAGE_REF
+      
+      if [ $? -eq 0 ]; then
+        echo "✅ SLSA provenance generated and attached"
+      else
+        echo "❌ Failed to generate provenance"
+        exit 1
+      fi
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Signing Artifacts'
+  condition: always()
+  inputs:
+    pathToPublish: 'provenance.json'
+    artifactName: 'SigningArtifacts-${{ parameters.serviceName }}'

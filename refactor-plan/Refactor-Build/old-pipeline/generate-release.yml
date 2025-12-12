@@ -1,0 +1,170 @@
+# Publish Build Artifacts for Deploy or Release
+# This pipeline's full documenation can be found in the following kb
+# TODO: Confluence Page for generate-release updates
+
+pool:
+  name: $(artifact_pool)
+
+# This pipeline is manually queued by package-build-data or for manual release generation and should not support triggers
+trigger: none
+
+parameters:
+  - name: chg_release_artifacts
+    displayName: Change Control for Artifact Release to Commercial
+    type: string
+    default: CHG0000000
+  - name: service_name
+    displayName: service to target
+    type: string
+    default: iac
+    values:
+      - iac
+      - onestream
+      - aisg
+      - iam
+      - utility
+      - cls
+      - argo-cd
+      - argo-workflows
+      - external-secrets
+      - ingress-nginx
+      - cert-manager
+      - linkerd-control-plane
+      - linkerd-crds
+      - dynatrace-operator
+      - opentelemetry-collector
+      - keda
+  - name: published_version
+    displayName: version to publish
+    type: string
+    default: ''  # Get latest from build_config.json on 'latest' selection ? or inappropriate in release targeting - we should know this value to be specific in this workflow imo
+  - name: release_build_data
+    type: boolean
+    displayName: Publish packaged build data for release to an environment
+    default: false
+  - name: build_type  # CSCNetwork Dependency - Only dev and com targets are supported
+    type: string
+    default: dev
+    values:
+      - dev
+      - qa
+      - com
+  - name: devops_organization
+    type: string
+    default: onestreamplatformeng
+    values:
+      - onestreamcloud
+      - onestreamplatformeng
+      - local
+
+variables:
+  - template: pipeline_vars.yml
+    parameters:
+      environment: ${{ parameters.devops_organization }}
+      azure_cloud: AzureGlobal  # TODO: AzureGovernment input and build to test landing zones for FedRAMP
+      build_type: ${{ parameters.build_type }}
+
+  - name: build_name
+    ${{ if parameters.release_build_data }}:
+      value: Release ${{ parameters.build_type }} ${{ parameters.service_name }} ${{ parameters.published_version }}
+    ${{ else }}:
+      value: Publish ${{ parameters.build_type }} ${{ parameters.service_name }} ${{ parameters.published_version }}
+
+  - ${{ if parameters.release_build_data }}:
+      - name: deploy_blob
+        value: release
+
+  - name: source_metadata_path
+    ${{ if eq(parameters.devops_organization, 'onestreamplatformeng') }}:
+      value: deploy
+    ${{ else }}:
+      value: release
+
+name: $(build_name)
+appendCommitMessageToRunName: false
+
+stages:
+  - stage: Publish
+    displayName: ${{ parameters.build_type }} ${{ parameters.service_name }} ${{ parameters.published_version }}
+    jobs:
+        #COM approvers vs DEV approvers is within here
+      - ${{ if eq(parameters.build_type , 'com') }}:
+        - template: templates/manual_validation.yml
+
+      - job: publish_gates
+        displayName: Release Gates
+        ${{ if eq(parameters.build_type , 'com') }}:
+          dependsOn: [waitForValidation]
+          condition: succeeded('waitForValidation')
+        steps:
+          - task: AddBuildTags@0
+
+          - task: ValidateSNOW@0
+            condition: or(
+                and(
+                  '${{ parameters.release_build_data }}',
+                  ne('${{ parameters.build_type }}', 'dev')
+                ),
+                eq('${{ parameters.devops_organization }}', 'onestreamcloud')
+              )
+            inputs:
+              ticket: ${{ parameters.chg_release_artifacts }}
+              serviceConnection: $(SNOWsvcConnection)
+              expectedState: "Implement"
+              expectedApproval: "Approved"
+
+      - job: validate_release
+        displayName: Validate and Publish Build Data
+        dependsOn: [publish_gates]
+        pool:
+          name: $(artifact_pool)
+        steps:
+          - template: templates/publish_build_data.yml
+            parameters:
+              devops_organization: ${{ parameters.devops_organization }}
+              build_type: ${{ parameters.build_type }}
+              service_name: ${{ parameters.service_name }}
+              published_version: ${{ parameters.published_version }}
+              metadata_repository: $(Source-Metadata)
+              release_metadata_repository: $(Metadata-Release)
+              release_branch: main
+              target_blob: $(deploy_blob)
+              release_build_data: ${{ parameters.release_build_data }}
+
+      - job:
+        displayName: Publish Build Artifacts
+        dependsOn: [validate_release]
+        condition: succeeded()
+        pool:
+          name: $(default_pool)
+        steps:
+          - template: templates/publish_build_artifacts.yml
+            parameters:
+              service_name: ${{ parameters.service_name }}
+              published_version: ${{ parameters.published_version }}
+              target_blob: $(deploy_blob)
+              devops_organization: ${{ parameters.devops_organization }}
+              release_branch: main
+              build_type: ${{ parameters.build_type }}
+
+      - job:
+        displayName: Publish Windows Images
+        dependsOn: [validate_release]
+        condition: and(
+            succeeded(),
+            eq('${{ parameters.service_name }}', 'onestream')
+          )
+        timeoutInMinutes: 90  # Because it's windows yeah?
+        pool:
+          # Developers - change all line items in the file from LF to CRLF when updating and commit without policy 'git commit -n -m "commit message to accomodate windows degenerates"'
+          # Developers - change all / pathing to \ when updating processes for windows packaging - default is linux in templates.
+          name: $(win_pool)
+        steps:
+          - template: templates/publish_windows_images.yml
+            parameters:
+              service_name: ${{ parameters.service_name }}
+              published_version: ${{ parameters.published_version }}
+              target_blob: $(deploy_blob)
+              devops_organization: ${{ parameters.devops_organization }}
+              release_branch: main
+              build_type: ${{ parameters.build_type }}

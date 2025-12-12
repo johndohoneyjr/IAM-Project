@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneStream Deployment Process Flow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .diagram-container {
+            background-color: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .diagram-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0078d4;
+        }
+        
+        svg {
+            width: 100%;
+            height: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+        }
+        
+        .step-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+        
+        .step-info h3 {
+            margin-top: 0;
+            color: #0078d4;
+        }
+        
+        .phase {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .phase-dev { background-color: #e8f5e8; }
+        .phase-build { background-color: #f0f4ff; }
+        .phase-security { background-color: #fff8e1; }
+        .phase-promotion { background-color: #fce4ec; }
+        
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #0078d4;
+            color: white;
+            text-align: center;
+            line-height: 25px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="diagram-title">Diagram 2: OneStream IAM Deployment Process Flow</div>
+        
+        <svg viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background -->
+            <rect width="1400" height="1000" fill="#ffffff" stroke="none"/>
+            
+            <!-- Swimlanes -->
+            <!-- Developer Lane -->
+            <rect x="0" y="0" width="1400" height="100" fill="#e3f2fd" stroke="#2196f3" stroke-width="1"/>
+            <text x="20" y="50" font-size="14" font-weight="bold" fill="#1976d2">Developer</text>
+            
+            <!-- Git Repository Lane -->
+            <rect x="0" y="100" width="1400" height="80" fill="#f5f5f5" stroke="#757575" stroke-width="1"/>
+            <text x="20" y="140" font-size="14" font-weight="bold" fill="#424242">Git Repository</text>
+            
+            <!-- Azure DevOps Lane -->
+            <rect x="0" y="180" width="1400" height="100" fill="#e8f4fd" stroke="#0078d4" stroke-width="1"/>
+            <text x="20" y="230" font-size="14" font-weight="bold" fill="#0066b2">Azure DevOps</text>
+            
+            <!-- Build Process Lane -->
+            <rect x="0" y="280" width="1400" height="200" fill="#e8f5e8" stroke="#4caf50" stroke-width="1"/>
+            <text x="20" y="320" font-size="14" font-weight="bold" fill="#2e7d32">Build &amp; Security</text>
+            
+            <!-- Development Environment Lane -->
+            <rect x="0" y="480" width="1400" height="100" fill="#f1f8e9" stroke="#689f38" stroke-width="1"/>
+            <text x="20" y="530" font-size="14" font-weight="bold" fill="#558b2f">Development Deploy</text>
+            
+            <!-- Promotion Lane -->
+            <rect x="0" y="580" width="1400" height="100" fill="#fce4ec" stroke="#e91e63" stroke-width="1"/>
+            <text x="20" y="630" font-size="14" font-weight="bold" fill="#ad1457">Promotion Engine</text>
+            
+            <!-- Staging Environment Lane -->
+            <rect x="0" y="680" width="1400" height="100" fill="#fff3e0" stroke="#ff9800" stroke-width="1"/>
+            <text x="20" y="730" font-size="14" font-weight="bold" fill="#e65100">Staging Deploy</text>
+            
+            <!-- QA/Approval Lane -->
+            <rect x="0" y="780" width="1400" height="100" fill="#fffde7" stroke="#fbc02d" stroke-width="1"/>
+            <text x="20" y="830" font-size="14" font-weight="bold" fill="#f57f17">QA &amp; Approvals</text>
+            
+            <!-- Timeline -->
+            <line x1="100" y1="0" x2="100" y2="880" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="85" y="900" font-size="12" fill="#666">Start</text>
+            
+            <line x1="1300" y1="0" x2="1300" y2="880" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="1280" y="900" font-size="12" fill="#666">Complete</text>
+            
+            <!-- Process Steps -->
+            
+            <!-- Step 1: Code Push -->
+            <circle cx="150" cy="50" r="20" fill="#2196f3" stroke="#1976d2" stroke-width="2"/>
+            <text x="150" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">1</text>
+            <rect x="120" y="70" width="60" height="25" fill="#bbdefb" stroke="#2196f3" rx="3"/>
+            <text x="150" y="85" text-anchor="middle" font-size="10">Code Push</text>
+            
+            <!-- Step 2: CI Trigger -->
+            <circle cx="250" cy="140" r="20" fill="#757575" stroke="#424242" stroke-width="2"/>
+            <text x="250" y="145" text-anchor="middle" font-size="12" font-weight="bold" fill="white">2</text>
+            <rect x="210" y="160" width="80" height="25" fill="#e0e0e0" stroke="#757575" rx="3"/>
+            <text x="250" y="175" text-anchor="middle" font-size="10">CI Trigger</text>
+            
+            <!-- Step 3: Build Start -->
+            <circle cx="350" cy="230" r="20" fill="#0078d4" stroke="#0066b2" stroke-width="2"/>
+            <text x="350" y="235" text-anchor="middle" font-size="12" font-weight="bold" fill="white">3</text>
+            <rect x="310" y="250" width="80" height="25" fill="#cce7ff" stroke="#0078d4" rx="3"/>
+            <text x="350" y="265" text-anchor="middle" font-size="10">Build Start</text>
+            
+            <!-- Step 4: Version Generation -->
+            <circle cx="450" cy="320" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="450" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="white">4</text>
+            <rect x="390" y="340" width="120" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="450" y="355" text-anchor="middle" font-size="10">Version Generation</text>
+            <text x="450" y="380" text-anchor="middle" font-size="9" fill="#2e7d32">poc-{build}-{sha}</text>
+            
+            <!-- Step 5: Container Build -->
+            <circle cx="580" cy="320" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="580" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="white">5</text>
+            <rect x="530" y="340" width="100" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="580" y="355" text-anchor="middle" font-size="10">Container Build</text>
+            
+            <!-- Step 6: ACR Push -->
+            <circle cx="710" cy="320" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="710" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="white">6</text>
+            <rect x="660" y="340" width="100" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="710" y="355" text-anchor="middle" font-size="10">ACR Push</text>
+            
+            <!-- Step 7: Digest Capture -->
+            <circle cx="840" cy="320" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="840" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="white">7</text>
+            <rect x="770" y="340" width="140" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="840" y="355" text-anchor="middle" font-size="10">Capture sha256:abc123...</text>
+            
+            <!-- Step 8: Cosign Signing -->
+            <circle cx="970" cy="380" r="20" fill="#ffc107" stroke="#f57c00" stroke-width="2"/>
+            <text x="970" y="385" text-anchor="middle" font-size="12" font-weight="bold" fill="black">8</text>
+            <rect x="910" y="400" width="120" height="25" fill="#fff9c4" stroke="#ffc107" rx="3"/>
+            <text x="970" y="415" text-anchor="middle" font-size="10">Cosign Signing</text>
+            <text x="970" y="440" text-anchor="middle" font-size="9" fill="#e65100">Azure Key Vault</text>
+            
+            <!-- Step 9: Security Scan -->
+            <circle cx="1100" cy="380" r="20" fill="#ffc107" stroke="#f57c00" stroke-width="2"/>
+            <text x="1100" y="385" text-anchor="middle" font-size="12" font-weight="bold" fill="black">9</text>
+            <rect x="1040" y="400" width="120" height="25" fill="#fff9c4" stroke="#ffc107" rx="3"/>
+            <text x="1100" y="415" text-anchor="middle" font-size="10">Security Scan</text>
+            <text x="1100" y="440" text-anchor="middle" font-size="9" fill="#e65100">Trivy Analysis</text>
+            
+            <!-- Step 10: Dev Deploy -->
+            <circle cx="450" cy="530" r="20" fill="#689f38" stroke="#558b2f" stroke-width="2"/>
+            <text x="450" y="535" text-anchor="middle" font-size="12" font-weight="bold" fill="white">10</text>
+            <rect x="380" y="550" width="140" height="25" fill="#dcedc8" stroke="#689f38" rx="3"/>
+            <text x="450" y="565" text-anchor="middle" font-size="10">Deploy to Dev AKS</text>
+            
+            <!-- Step 11: Dev Verification -->
+            <circle cx="650" cy="530" r="20" fill="#689f38" stroke="#558b2f" stroke-width="2"/>
+            <text x="650" y="535" text-anchor="middle" font-size="12" font-weight="bold" fill="white">11</text>
+            <rect x="580" y="550" width="140" height="25" fill="#dcedc8" stroke="#689f38" rx="3"/>
+            <text x="650" y="565" text-anchor="middle" font-size="10">Verify Deployment</text>
+            
+            <!-- Manual Approval Gate -->
+            <rect x="800" y="780" width="150" height="80" fill="#fff59d" stroke="#f57f17" stroke-width="3" rx="10"/>
+            <text x="875" y="800" text-anchor="middle" font-size="12" font-weight="bold" fill="#e65100">Manual Approval</text>
+            <text x="875" y="820" text-anchor="middle" font-size="10" fill="#e65100">QA Team Review</text>
+            <text x="875" y="835" text-anchor="middle" font-size="9" fill="#e65100">Integration Tests</text>
+            <text x="875" y="850" text-anchor="middle" font-size="9" fill="#e65100">Business Approval</text>
+            
+            <!-- Step 12: Promotion Start -->
+            <circle cx="1000" cy="630" r="20" fill="#e91e63" stroke="#ad1457" stroke-width="2"/>
+            <text x="1000" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="white">12</text>
+            <rect x="930" y="650" width="140" height="25" fill="#f8bbd9" stroke="#e91e63" rx="3"/>
+            <text x="1000" y="665" text-anchor="middle" font-size="10">Start Promotion</text>
+            
+            <!-- Step 13: Signature Verify -->
+            <circle cx="1130" cy="630" r="20" fill="#e91e63" stroke="#ad1457" stroke-width="2"/>
+            <text x="1130" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="white">13</text>
+            <rect x="1060" y="650" width="140" height="25" fill="#f8bbd9" stroke="#e91e63" rx="3"/>
+            <text x="1130" y="665" text-anchor="middle" font-size="10">Verify Signature</text>
+            
+            <!-- Step 14: ACR Import -->
+            <circle cx="1260" cy="630" r="20" fill="#e91e63" stroke="#ad1457" stroke-width="2"/>
+            <text x="1260" y="635" text-anchor="middle" font-size="12" font-weight="bold" fill="white">14</text>
+            <rect x="1190" y="650" width="140" height="25" fill="#f8bbd9" stroke="#e91e63" rx="3"/>
+            <text x="1260" y="665" text-anchor="middle" font-size="10">ACR Import</text>
+            <text x="1260" y="685" text-anchor="middle" font-size="9" fill="#ad1457">Same Digest</text>
+            
+            <!-- Step 15: Staging Deploy -->
+            <circle cx="1000" cy="730" r="20" fill="#ff9800" stroke="#e65100" stroke-width="2"/>
+            <text x="1000" y="735" text-anchor="middle" font-size="12" font-weight="bold" fill="white">15</text>
+            <rect x="920" y="750" width="160" height="25" fill="#ffe0b2" stroke="#ff9800" rx="3"/>
+            <text x="1000" y="765" text-anchor="middle" font-size="10">Deploy to Staging AKS</text>
+            
+            <!-- Step 16: Staging Verification -->
+            <circle cx="1200" cy="730" r="20" fill="#ff9800" stroke="#e65100" stroke-width="2"/>
+            <text x="1200" y="735" text-anchor="middle" font-size="12" font-weight="bold" fill="white">16</text>
+            <rect x="1120" y="750" width="160" height="25" fill="#ffe0b2" stroke="#ff9800" rx="3"/>
+            <text x="1200" y="765" text-anchor="middle" font-size="10">Verify Staging Deploy</text>
+            
+            <!-- Process Flow Arrows -->
+            <!-- Developer to Git -->
+            <line x1="170" y1="50" x2="230" y2="140" stroke="#2196f3" stroke-width="3" marker-end="url(#arrowhead-blue)"/>
+            
+            <!-- Git to Azure DevOps -->
+            <line x1="270" y1="140" x2="330" y2="230" stroke="#2196f3" stroke-width="3" marker-end="url(#arrowhead-blue)"/>
+            
+            <!-- Build Process Flow -->
+            <line x1="370" y1="230" x2="430" y2="320" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            <line x1="470" y1="320" x2="560" y2="320" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            <line x1="600" y1="320" x2="690" y2="320" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            <line x1="730" y1="320" x2="820" y2="320" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            
+            <!-- Security Process -->
+            <line x1="860" y1="320" x2="950" y2="380" stroke="#ffc107" stroke-width="3" marker-end="url(#arrowhead-yellow)"/>
+            <line x1="990" y1="380" x2="1080" y2="380" stroke="#ffc107" stroke-width="3" marker-end="url(#arrowhead-yellow)"/>
+            
+            <!-- Deploy to Dev -->
+            <line x1="450" y1="340" x2="450" y2="510" stroke="#689f38" stroke-width="3" marker-end="url(#arrowhead-lightgreen)"/>
+            <line x1="470" y1="530" x2="630" y2="530" stroke="#689f38" stroke-width="3" marker-end="url(#arrowhead-lightgreen)"/>
+            
+            <!-- Approval Flow -->
+            <line x1="650" y1="550" x2="875" y2="780" stroke="#f57f17" stroke-width="3" stroke-dasharray="10,5" marker-end="url(#arrowhead-yellow2)"/>
+            
+            <!-- Promotion Flow -->
+            <line x1="875" y1="780" x2="980" y2="630" stroke="#e91e63" stroke-width="3" marker-end="url(#arrowhead-pink)"/>
+            <line x1="1020" y1="630" x2="1110" y2="630" stroke="#e91e63" stroke-width="3" marker-end="url(#arrowhead-pink)"/>
+            <line x1="1150" y1="630" x2="1240" y2="630" stroke="#e91e63" stroke-width="3" marker-end="url(#arrowhead-pink)"/>
+            
+            <!-- Staging Deploy -->
+            <line x1="1260" y1="650" x2="1000" y2="710" stroke="#ff9800" stroke-width="3" marker-end="url(#arrowhead-orange)"/>
+            <line x1="1020" y1="730" x2="1180" y2="730" stroke="#ff9800" stroke-width="3" marker-end="url(#arrowhead-orange)"/>
+            
+            <!-- Arrow markers -->
+            <defs>
+                <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#2196f3"/>
+                </marker>
+                <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#4caf50"/>
+                </marker>
+                <marker id="arrowhead-yellow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#ffc107"/>
+                </marker>
+                <marker id="arrowhead-yellow2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#f57f17"/>
+                </marker>
+                <marker id="arrowhead-lightgreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#689f38"/>
+                </marker>
+                <marker id="arrowhead-pink" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#e91e63"/>
+                </marker>
+                <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#ff9800"/>
+                </marker>
+            </defs>
+            
+            <!-- Timeline Annotations -->
+            <text x="200" y="920" font-size="11" fill="#666">~ 2 min</text>
+            <text x="500" y="920" font-size="11" fill="#666">~ 8 min</text>
+            <text x="900" y="920" font-size="11" fill="#666">~ 5 min</text>
+            <text x="1200" y="920" font-size="11" fill="#666">~ 15 min total</text>
+            
+            <!-- Security Badge -->
+            <rect x="1250" y="20" width="130" height="60" fill="#fff3e0" stroke="#e65100" stroke-width="2" rx="5"/>
+            <text x="1315" y="35" text-anchor="middle" font-size="10" font-weight="bold" fill="#e65100">🔒 Security Features</text>
+            <text x="1315" y="50" text-anchor="middle" font-size="9" fill="#e65100">• Cosign Signatures</text>
+            <text x="1315" y="62" text-anchor="middle" font-size="9" fill="#e65100">• Immutable Digests</text>
+            <text x="1315" y="74" text-anchor="middle" font-size="9" fill="#e65100">• Supply Chain Integrity</text>
+        </svg>
+        
+        <div class="step-info">
+            <h3>Detailed Process Steps</h3>
+            
+            <div class="phase phase-dev">
+                <strong>🚀 Development Phase (Steps 1-3)</strong>
+                <div><span class="step-number">1</span><strong>Code Push:</strong> Developer commits and pushes code changes to Git repository</div>
+                <div><span class="step-number">2</span><strong>CI Trigger:</strong> Git webhook triggers Azure DevOps CI pipeline automatically</div>
+                <div><span class="step-number">3</span><strong>Build Start:</strong> Azure DevOps assigns build agent and initiates pipeline execution</div>
+            </div>
+            
+            <div class="phase phase-build">
+                <strong>🔧 Build & Artifact Creation (Steps 4-7)</strong>
+                <div><span class="step-number">4</span><strong>Version Generation:</strong> Create unique version identifier: poc-{buildId}-{gitSha}</div>
+                <div><span class="step-number">5</span><strong>Container Build:</strong> Build Docker image with application code and dependencies</div>
+                <div><span class="step-number">6</span><strong>ACR Push:</strong> Push container image to development Azure Container Registry</div>
+                <div><span class="step-number">7</span><strong>Digest Capture:</strong> Extract and store immutable sha256 digest for reproducible deployments</div>
+            </div>
+            
+            <div class="phase phase-security">
+                <strong>🛡️ Security & Verification (Steps 8-9)</strong>
+                <div><span class="step-number">8</span><strong>Cosign Signing:</strong> Cryptographically sign container image using Azure Key Vault HSM</div>
+                <div><span class="step-number">9</span><strong>Security Scan:</strong> Run Trivy security analysis for vulnerabilities and compliance</div>
+            </div>
+            
+            <div class="phase phase-dev">
+                <strong>🚀 Development Deployment (Steps 10-11)</strong>
+                <div><span class="step-number">10</span><strong>Dev Deploy:</strong> Deploy to development AKS using immutable digest reference</div>
+                <div><span class="step-number">11</span><strong>Dev Verification:</strong> Verify deployment health and functionality in development environment</div>
+            </div>
+            
+            <div class="phase phase-promotion">
+                <strong>🎯 Promotion Process (Steps 12-16)</strong>
+                <div><span class="step-number">12</span><strong>Promotion Start:</strong> QA team approves promotion after manual testing and review</div>
+                <div><span class="step-number">13</span><strong>Signature Verify:</strong> Validate Cosign signature before cross-environment promotion</div>
+                <div><span class="step-number">14</span><strong>ACR Import:</strong> Import container to staging ACR preserving original digest</div>
+                <div><span class="step-number">15</span><strong>Staging Deploy:</strong> Deploy to staging AKS using same immutable digest reference</div>
+                <div><span class="step-number">16</span><strong>Staging Verification:</strong> Confirm successful deployment and readiness for production</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

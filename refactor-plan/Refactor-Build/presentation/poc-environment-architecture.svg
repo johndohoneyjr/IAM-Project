@@ -1,0 +1,273 @@
+<svg width="1400" height="900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .azure-blue { fill: #0078D4; stroke: #005A9F; stroke-width: 2; }
+      .dev-green { fill: #107C10; stroke: #0F6F0F; stroke-width: 2; }
+      .staging-orange { fill: #FF8C00; stroke: #E67900; stroke-width: 2; }
+      .shared-gray { fill: #F8F8F8; stroke: #666666; stroke-width: 2; }
+      .sp-purple { fill: #9C27B0; stroke: #7B1FA2; stroke-width: 2; }
+      .security-red { fill: #F44336; stroke: #D32F2F; stroke-width: 2; }
+      
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; fill: #0078D4; font-weight: bold; }
+      .text-large { font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; fill: #333; font-weight: bold; }
+      .text-medium { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; fill: #333; font-weight: bold; }
+      .text-small { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; fill: #333; }
+      .text-tiny { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; fill: #666; }
+      .text-white { fill: white; }
+      
+      .connection { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .connection-green { stroke: #107C10; stroke-width: 3; fill: none; marker-end: url(#arrowhead-green); }
+      .connection-orange { stroke: #FF8C00; stroke-width: 3; fill: none; marker-end: url(#arrowhead-orange); }
+      .connection-purple { stroke: #9C27B0; stroke-width: 3; fill: none; marker-end: url(#arrowhead-purple); stroke-dasharray: 8,4; }
+      
+      .border-dashed { stroke-dasharray: 10,5; }
+    </style>
+    
+    <!-- Arrow markers -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#107C10" />
+    </marker>
+    <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#FF8C00" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9C27B0" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="900" fill="#FAFAFA" stroke="none"/>
+  
+  <!-- Title -->
+  <text x="700" y="40" text-anchor="middle" class="text-title">OneStream POC Environment Architecture</text>
+  
+  <!-- Azure Subscription Container -->
+  <rect x="50" y="70" width="1300" height="750" class="azure-blue" fill-opacity="0.05" rx="15" stroke-dasharray="15,5"/>
+  <text x="70" y="100" class="text-large">Azure Subscription: onestream-poc</text>
+  <text x="70" y="120" class="text-small">Isolated POC Environment - Complete Production Isolation</text>
+  
+  <!-- Shared Resource Group -->
+  <rect x="80" y="150" width="320" height="220" class="shared-gray" fill-opacity="0.2" rx="8" stroke-dasharray="8,4"/>
+  <text x="100" y="175" class="text-medium">Shared Resource Group</text>
+  <text x="100" y="195" class="text-small">onestream-poc-shared-rg</text>
+  
+  <!-- Key Vault 1 - Cosign -->
+  <rect x="100" y="210" width="140" height="70" class="azure-blue" rx="6"/>
+  <circle cx="120" cy="230" r="8" fill="white"/>
+  <text x="140" y="225" class="text-small text-white">Azure Key Vault</text>
+  <text x="140" y="240" class="text-small text-white">cosign-kv</text>
+  <text x="140" y="255" class="text-small text-white">🔑 Signing Keys</text>
+  <text x="140" y="270" class="text-tiny text-white">FIPS 140-2 Level 3</text>
+  
+  <!-- Key Vault 2 - Secrets -->
+  <rect x="260" y="210" width="140" height="70" class="azure-blue" rx="6"/>
+  <circle cx="280" cy="230" r="8" fill="white"/>
+  <text x="300" y="225" class="text-small text-white">Azure Key Vault</text>
+  <text x="300" y="240" class="text-small text-white">secrets-kv</text>
+  <text x="300" y="255" class="text-small text-white">🔐 App Secrets</text>
+  <text x="300" y="270" class="text-tiny text-white">Pipeline Credentials</text>
+  
+  <!-- Virtual Network -->
+  <rect x="100" y="300" width="300" height="50" class="azure-blue" rx="6"/>
+  <text x="120" y="320" class="text-small text-white">🌐 Virtual Network: onestream-poc-vnet</text>
+  <text x="120" y="335" class="text-small text-white">CIDR: 10.100.0.0/16 | Subnets: AKS, Pipelines, ACR</text>
+  
+  <!-- Development Environment -->
+  <rect x="450" y="150" width="380" height="300" class="dev-green" fill-opacity="0.15" rx="8" stroke-dasharray="8,4"/>
+  <text x="470" y="175" class="text-medium">Development Environment</text>
+  <text x="470" y="195" class="text-small">onestream-poc-dev-rg</text>
+  
+  <!-- Dev ACR -->
+  <rect x="470" y="210" width="160" height="80" class="dev-green" rx="6"/>
+  <rect x="485" y="225" width="20" height="15" fill="white" rx="2"/>
+  <rect x="485" y="245" width="20" height="15" fill="white" rx="2"/>
+  <text x="520" y="230" class="text-small text-white">Container Registry</text>
+  <text x="520" y="245" class="text-small text-white">onestreampocdx</text>
+  <text x="520" y="260" class="text-small text-white">Premium Tier</text>
+  <text x="520" y="275" class="text-tiny text-white">30-day retention</text>
+  
+  <!-- Dev AKS -->
+  <rect x="650" y="210" width="160" height="80" class="dev-green" rx="6"/>
+  <circle cx="670" cy="235" r="8" fill="white"/>
+  <circle cx="690" cy="235" r="8" fill="white"/>
+  <text x="710" y="230" class="text-small text-white">AKS Cluster</text>
+  <text x="710" y="245" class="text-small text-white">dev-aks</text>
+  <text x="710" y="260" class="text-small text-white">2 nodes</text>
+  <text x="710" y="275" class="text-tiny text-white">Standard_D2s_v3</text>
+  
+  <!-- Dev Service Principal Box -->
+  <rect x="470" y="310" width="340" height="50" class="dev-green" fill-opacity="0.3" rx="6"/>
+  <text x="480" y="330" class="text-small">👤 sp-onestream-poc-dev-pipeline</text>
+  <text x="480" y="345" class="text-tiny">Permissions: AcrPush + AKS Deploy + Key Vault Crypto User</text>
+  
+  <!-- Dev Subnet Info -->
+  <rect x="470" y="370" width="340" height="40" class="dev-green" fill-opacity="0.2" rx="6"/>
+  <text x="480" y="385" class="text-tiny">🌐 Subnet: 10.100.1.0/24 (AKS Nodes)</text>
+  <text x="480" y="400" class="text-tiny">🔒 NSG: Restricted inbound, controlled outbound</text>
+  
+  <!-- Staging Environment -->
+  <rect x="870" y="150" width="380" height="300" class="staging-orange" fill-opacity="0.15" rx="8" stroke-dasharray="8,4"/>
+  <text x="890" y="175" class="text-medium">Staging Environment</text>
+  <text x="890" y="195" class="text-small">onestream-poc-staging-rg</text>
+  
+  <!-- Staging ACR -->
+  <rect x="890" y="210" width="160" height="80" class="staging-orange" rx="6"/>
+  <rect x="905" y="225" width="20" height="15" fill="white" rx="2"/>
+  <rect x="905" y="245" width="20" height="15" fill="white" rx="2"/>
+  <text x="940" y="230" class="text-small text-white">Container Registry</text>
+  <text x="940" y="245" class="text-small text-white">onestreampocstg</text>
+  <text x="940" y="260" class="text-small text-white">Premium Tier</text>
+  <text x="940" y="275" class="text-tiny text-white">90-day retention</text>
+  
+  <!-- Staging AKS -->
+  <rect x="1070" y="210" width="160" height="80" class="staging-orange" rx="6"/>
+  <circle cx="1090" cy="235" r="8" fill="white"/>
+  <circle cx="1110" cy="235" r="8" fill="white"/>
+  <text x="1130" y="230" class="text-small text-white">AKS Cluster</text>
+  <text x="1130" y="245" class="text-small text-white">staging-aks</text>
+  <text x="1130" y="260" class="text-small text-white">2 nodes</text>
+  <text x="1130" y="275" class="text-tiny text-white">Standard_D2s_v3</text>
+  
+  <!-- Staging Service Principal Box -->
+  <rect x="890" y="310" width="340" height="50" class="staging-orange" fill-opacity="0.3" rx="6"/>
+  <text x="900" y="330" class="text-small">👤 sp-onestream-poc-staging-pipeline</text>
+  <text x="900" y="345" class="text-tiny">Permissions: AcrPull + AKS Deploy (Read-only)</text>
+  
+  <!-- Staging Subnet Info -->
+  <rect x="890" y="370" width="340" height="40" class="staging-orange" fill-opacity="0.2" rx="6"/>
+  <text x="900" y="385" class="text-tiny">🌐 Subnet: 10.100.2.0/24 (AKS Nodes)</text>
+  <text x="900" y="400" class="text-tiny">🔒 NSG: Staging-specific security rules</text>
+  
+  <!-- Azure DevOps Section -->
+  <rect x="80" y="500" width="350" height="140" class="azure-blue" fill-opacity="0.15" rx="8"/>
+  <text x="100" y="525" class="text-medium">Azure DevOps</text>
+  <text x="100" y="545" class="text-small">Project: OneStream-Pipeline-POC</text>
+  
+  <!-- Pipeline boxes -->
+  <rect x="100" y="560" width="310" height="25" class="azure-blue" rx="4"/>
+  <text x="110" y="575" class="text-small text-white">🔄 iam-poc-build-pipeline (CI/CD)</text>
+  
+  <rect x="100" y="590" width="310" height="25" class="azure-blue" rx="4"/>
+  <text x="110" y="605" class="text-small text-white">🚀 iam-poc-promotion-pipeline (Cross-env)</text>
+  
+  <rect x="100" y="620" width="310" height="25" class="azure-blue" rx="4"/>
+  <text x="110" y="635" class="text-small text-white">📋 iam-poc-deploy-pipeline (K8s Deploy)</text>
+  
+  <!-- Promotion Engine -->
+  <rect x="470" y="500" width="360" height="140" class="sp-purple" fill-opacity="0.15" rx="8"/>
+  <text x="490" y="525" class="text-medium">Promotion Engine</text>
+  <text x="490" y="545" class="text-small">Cross-Environment Image Promotion</text>
+  
+  <!-- Promotion SP -->
+  <rect x="490" y="560" width="320" height="35" class="sp-purple" rx="6"/>
+  <text x="500" y="575" class="text-small text-white">👤 sp-onestream-poc-promotion-engine</text>
+  <text x="500" y="585" class="text-tiny text-white">Cross-ACR Import + Signature Verification</text>
+  
+  <!-- Digest Management -->
+  <rect x="490" y="605" width="320" height="25" class="sp-purple" fill-opacity="0.3" rx="4"/>
+  <text x="500" y="620" class="text-small">🔐 Immutable Digest Management: sha256:abc123...</text>
+  
+  <!-- Security and Isolation Zone -->
+  <rect x="870" y="500" width="380" height="140" class="security-red" fill-opacity="0.1" rx="8"/>
+  <text x="890" y="525" class="text-medium">Security &amp; Isolation</text>
+  
+  <rect x="890" y="540" width="340" height="20" class="security-red" fill-opacity="0.2" rx="3"/>
+  <text x="900" y="553" class="text-tiny">🚫 Zero Production Network Access</text>
+  
+  <rect x="890" y="565" width="340" height="20" class="security-red" fill-opacity="0.2" rx="3"/>
+  <text x="900" y="578" class="text-tiny">🔒 Isolated DNS and Service Discovery</text>
+  
+  <rect x="890" y="590" width="340" height="20" class="security-red" fill-opacity="0.2" rx="3"/>
+  <text x="900" y="603" class="text-tiny">🛡️ Separate Monitoring and Audit Logs</text>
+  
+  <rect x="890" y="615" width="340" height="20" class="security-red" fill-opacity="0.2" rx="3"/>
+  <text x="900" y="628" class="text-tiny">⚡ Complete CI/CD Pipeline Isolation</text>
+  
+  <!-- Connection Lines -->
+  
+  <!-- Dev Pipeline to Dev Resources -->
+  <line x1="550" y1="310" x2="550" y2="290" class="connection-green"/>
+  <line x1="730" y1="310" x2="730" y2="290" class="connection-green"/>
+  
+  <!-- Staging Pipeline to Staging Resources -->
+  <line x1="970" y1="310" x2="970" y2="290" class="connection-orange"/>
+  <line x1="1150" y1="310" x2="1150" y2="290" class="connection-orange"/>
+  
+  <!-- Azure DevOps to Environments -->
+  <line x1="430" y1="580" x2="470" y2="340" class="connection"/>
+  <line x1="430" y1="600" x2="890" y2="340" class="connection"/>
+  
+  <!-- Promotion Engine Cross-Environment -->
+  <line x1="630" y1="500" x2="550" y2="290" class="connection-purple"/>
+  <line x1="680" y1="500" x2="970" y2="290" class="connection-purple"/>
+  
+  <!-- Key Vault Access Lines -->
+  <line x1="170" y1="280" x2="550" y2="310" stroke="#FFD700" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowhead)"/>
+  <line x1="330" y1="280" x2="650" y2="500" stroke="#FFD700" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowhead)"/>
+  
+  <!-- Network Connections -->
+  <line x1="250" y1="350" x2="470" y2="390" stroke="#0078D4" stroke-width="2" stroke-dasharray="3,3"/>
+  <line x1="400" y1="325" x2="890" y2="390" stroke="#0078D4" stroke-width="2" stroke-dasharray="3,3"/>
+  
+  <!-- Resource Summary Box -->
+  <rect x="80" y="680" width="250" height="110" class="shared-gray" rx="8"/>
+  <text x="100" y="705" class="text-medium">📊 Resource Summary</text>
+  <text x="100" y="725" class="text-small">• 3 Service Principals</text>
+  <text x="100" y="740" class="text-small">• 2 ACR Premium Instances</text>
+  <text x="100" y="755" class="text-small">• 2 AKS Clusters (4 nodes total)</text>
+  <text x="100" y="770" class="text-small">• 2 Key Vaults (HSM + Standard)</text>
+  <text x="100" y="785" class="text-small">• 1 Virtual Network (3 subnets)</text>
+  
+  <!-- Cost Estimate Box -->
+  <rect x="350" y="680" width="250" height="110" class="azure-blue" fill-opacity="0.1" rx="8"/>
+  <text x="370" y="705" class="text-medium">💰 Cost Estimate</text>
+  <text x="370" y="725" class="text-small">Monthly POC Cost: ~$800</text>
+  <text x="370" y="740" class="text-small">3-Month Evaluation: ~$2,400</text>
+  <text x="370" y="755" class="text-small">vs. Current Blob Storage: $70K+/year</text>
+  <text x="370" y="770" class="text-small">ROI Timeline: 1 month</text>
+  <text x="370" y="785" class="text-small">Annual Savings: $400K+</text>
+  
+  <!-- Performance Targets -->
+  <rect x="620" y="680" width="250" height="110" class="dev-green" fill-opacity="0.1" rx="8"/>
+  <text x="640" y="705" class="text-medium">🎯 Performance Targets</text>
+  <text x="640" y="725" class="text-small">Build Time: &lt; 15 minutes</text>
+  <text x="640" y="740" class="text-small">Deployment: &lt; 5 minutes</text>
+  <text x="640" y="755" class="text-small">Rollback: &lt; 3 minutes</text>
+  <text x="640" y="770" class="text-small">Success Rate: &gt; 95%</text>
+  <text x="640" y="785" class="text-small">Zero Production Impact</text>
+  
+  <!-- Security Features -->
+  <rect x="890" y="680" width="360" height="110" class="security-red" fill-opacity="0.1" rx="8"/>
+  <text x="910" y="705" class="text-medium">🔒 Security Features</text>
+  <text x="910" y="725" class="text-small">• Cosign Cryptographic Signatures</text>
+  <text x="910" y="740" class="text-small">• Immutable Digest References (sha256:...)</text>
+  <text x="910" y="755" class="text-small">• Least Privilege Service Principals</text>
+  <text x="910" y="770" class="text-small">• FIPS 140-2 Level 3 HSM Integration</text>
+  <text x="910" y="785" class="text-small">• Complete Audit Trail &amp; Compliance</text>
+  
+  <!-- Legend -->
+  <rect x="50" y="830" width="1300" height="50" fill="#F5F5F5" stroke="#DDD" rx="5"/>
+  <text x="70" y="850" class="text-medium">Legend:</text>
+  <rect x="130" y="840" width="15" height="15" class="dev-green"/>
+  <text x="155" y="852" class="text-small">Development</text>
+  <rect x="250" y="840" width="15" height="15" class="staging-orange"/>
+  <text x="275" y="852" class="text-small">Staging</text>
+  <rect x="350" y="840" width="15" height="15" class="sp-purple"/>
+  <text x="375" y="852" class="text-small">Cross-Environment</text>
+  <rect x="500" y="840" width="15" height="15" class="azure-blue"/>
+  <text x="525" y="852" class="text-small">Azure Services</text>
+  <rect x="630" y="840" width="15" height="15" class="security-red"/>
+  <text x="655" y="852" class="text-small">Security Controls</text>
+  
+  <line x1="780" y1="845" x2="810" y2="845" class="connection-purple"/>
+  <text x="820" y="850" class="text-small">Promotion Flow</text>
+  
+  <line x1="920" y1="845" x2="950" y2="845" stroke="#FFD700" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="960" y="850" class="text-small">Key Vault Access</text>
+  
+  <text x="1100" y="850" class="text-small">🔒 Least Privilege Access</text>
+  <text x="1100" y="865" class="text-tiny">All connections follow principle of least privilege</text>
+</svg>

@@ -1,0 +1,263 @@
+<svg width="1400" height="900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .lane-ops { fill: #FFEBEE; stroke: #F44336; stroke-width: 1; }
+      .lane-monitoring { fill: #FFF3E0; stroke: #FF9800; stroke-width: 1; }
+      .lane-azdo { fill: #E8F4FD; stroke: #0078D4; stroke-width: 1; }
+      .lane-kubernetes { fill: #E3F2FD; stroke: #2196F3; stroke-width: 1; }
+      .lane-acr { fill: #E8F5E8; stroke: #4CAF50; stroke-width: 1; }
+      .lane-security { fill: #F3E5F5; stroke: #9C27B0; stroke-width: 1; }
+      
+      .step-trigger { fill: #F44336; stroke: #D32F2F; stroke-width: 2; }
+      .step-detect { fill: #FF9800; stroke: #F57C00; stroke-width: 2; }
+      .step-decision { fill: #2196F3; stroke: #1976D2; stroke-width: 2; }
+      .step-rollback { fill: #4CAF50; stroke: #388E3C; stroke-width: 2; }
+      .step-verify { fill: #9C27B0; stroke: #7B1FA2; stroke-width: 2; }
+      .step-emergency { fill: #E91E63; stroke: #C2185B; stroke-width: 2; }
+      
+      .text-title { font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; fill: #D32F2F; font-weight: bold; }
+      .text-lane { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; fill: #333; font-weight: bold; }
+      .text-step { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; fill: white; font-weight: bold; }
+      .text-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10px; fill: #333; }
+      .text-time { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #666; }
+      .text-detail { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9px; fill: #666; }
+      .text-emergency { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; fill: #B71C1C; font-weight: bold; }
+      
+      .arrow { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-trigger { stroke: #F44336; stroke-width: 3; fill: none; marker-end: url(#arrowhead-red); }
+      .arrow-detect { stroke: #FF9800; stroke-width: 3; fill: none; marker-end: url(#arrowhead-orange); }
+      .arrow-rollback { stroke: #4CAF50; stroke-width: 3; fill: none; marker-end: url(#arrowhead-green); }
+      .arrow-emergency { stroke: #E91E63; stroke-width: 4; fill: none; marker-end: url(#arrowhead-pink); stroke-dasharray: 8,4; }
+      .arrow-verify { stroke: #9C27B0; stroke-width: 3; fill: none; marker-end: url(#arrowhead-purple); }
+    </style>
+    
+    <!-- Arrow markers -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+    <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#F44336" />
+    </marker>
+    <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#FF9800" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4CAF50" />
+    </marker>
+    <marker id="arrowhead-pink" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#E91E63" />
+    </marker>
+    <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9C27B0" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1400" height="900" fill="#FAFAFA" stroke="none"/>
+  
+  <!-- Title -->
+  <text x="700" y="40" text-anchor="middle" class="text-title">🚨 OneStream IAM Emergency Rollback Process</text>
+  
+  <!-- Swimlanes -->
+  <rect x="0" y="70" width="1400" height="70" class="lane-ops"/>
+  <text x="20" y="105" class="text-lane">🚨 Operations Team</text>
+  
+  <rect x="0" y="140" width="1400" height="70" class="lane-monitoring"/>
+  <text x="20" y="175" class="text-lane">📊 Monitoring &amp; Alerts</text>
+  
+  <rect x="0" y="210" width="1400" height="70" class="lane-azdo"/>
+  <text x="20" y="245" class="text-lane">🔄 Azure DevOps</text>
+  
+  <rect x="0" y="280" width="1400" height="80" class="lane-kubernetes"/>
+  <text x="20" y="320" class="text-lane">⚙️ Kubernetes (AKS)</text>
+  
+  <rect x="0" y="360" width="1400" height="70" class="lane-acr"/>
+  <text x="20" y="395" class="text-lane">📦 Azure Container Registry</text>
+  
+  <rect x="0" y="430" width="1400" height="70" class="lane-security"/>
+  <text x="20" y="465" class="text-lane">🛡️ Security Validation</text>
+  
+  <!-- Timeline markers -->
+  <line x1="150" y1="70" x2="150" y2="500" stroke="#CCC" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="135" y="520" class="text-time">T+0</text>
+  
+  <line x1="350" y1="70" x2="350" y2="500" stroke="#CCC" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="325" y="520" class="text-time">T+30s</text>
+  
+  <line x1="650" y1="70" x2="650" y2="500" stroke="#CCC" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="625" y="520" class="text-time">T+2min</text>
+  
+  <line x1="950" y1="70" x2="950" y2="500" stroke="#CCC" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="925" y="520" class="text-time">T+3min</text>
+  
+  <line x1="1250" y1="70" x2="1250" y2="500" stroke="#CCC" stroke-width="2" stroke-dasharray="5,5"/>
+  <text x="1225" y="520" class="text-time">T+5min</text>
+  
+  <!-- Emergency Trigger Phase -->
+  
+  <!-- Step 1: Issue Detection -->
+  <circle cx="200" cy="175" r="20" class="step-detect"/>
+  <text x="200" y="180" text-anchor="middle" class="text-step">1</text>
+  <rect x="120" y="190" width="160" height="15" fill="#FFE0B2" stroke="#FF9800" rx="3"/>
+  <text x="200" y="200" text-anchor="middle" class="text-label">🚨 Critical Alert Triggered</text>
+  
+  <!-- Step 2: Human Decision -->
+  <polygon points="280,90 320,105 280,120 240,105" class="step-trigger"/>
+  <text x="280" y="110" text-anchor="middle" class="text-step">2</text>
+  <rect x="200" y="125" width="160" height="15" fill="#FFCDD2" stroke="#F44336" rx="3"/>
+  <text x="280" y="135" text-anchor="middle" class="text-label">🔴 ROLLBACK DECISION</text>
+  
+  <!-- Step 3: Emergency Pipeline -->
+  <circle cx="400" cy="245" r="20" class="step-decision"/>
+  <text x="400" y="250" text-anchor="middle" class="text-step">3</text>
+  <rect x="320" y="260" width="160" height="15" fill="#BBDEFB" stroke="#2196F3" rx="3"/>
+  <text x="400" y="270" text-anchor="middle" class="text-label">🚀 Emergency Pipeline Start</text>
+  
+  <!-- Rollback Execution Phase -->
+  
+  <!-- Step 4: Last Known Good Version -->
+  <circle cx="550" cy="395" r="20" class="step-rollback"/>
+  <text x="550" y="400" text-anchor="middle" class="text-step">4</text>
+  <rect x="450" y="410" width="200" height="15" fill="#C8E6C9" stroke="#4CAF50" rx="3"/>
+  <text x="550" y="420" text-anchor="middle" class="text-label">📋 Retrieve LKG Digest History</text>
+  <text x="550" y="440" text-anchor="middle" class="text-detail">sha256:def456... (3 versions back)</text>
+  
+  <!-- Step 5: Signature Verification -->
+  <circle cx="700" cy="465" r="20" class="step-verify"/>
+  <text x="700" y="470" text-anchor="middle" class="text-step">5</text>
+  <rect x="600" y="480" width="200" height="15" fill="#E1BEE7" stroke="#9C27B0" rx="3"/>
+  <text x="700" y="490" text-anchor="middle" class="text-label">🔐 Verify LKG Signature</text>
+  <text x="700" y="505" text-anchor="middle" class="text-detail">Cosign + Azure Key Vault</text>
+  
+  <!-- Step 6: Staging Rollback -->
+  <circle cx="800" cy="320" r="20" class="step-rollback"/>
+  <text x="800" y="325" text-anchor="middle" class="text-step">6</text>
+  <rect x="700" y="335" width="200" height="15" fill="#C8E6C9" stroke="#4CAF50" rx="3"/>
+  <text x="800" y="345" text-anchor="middle" class="text-label">⚡ Staging Rollback Deploy</text>
+  
+  <!-- Step 7: Staging Verification -->
+  <circle cx="950" cy="320" r="20" class="step-verify"/>
+  <text x="950" y="325" text-anchor="middle" class="text-step">7</text>
+  <rect x="850" y="335" width="200" height="15" fill="#E1BEE7" stroke="#9C27B0" rx="3"/>
+  <text x="950" y="345" text-anchor="middle" class="text-label">✅ Health Check Passed</text>
+  
+  <!-- Critical Decision Point -->
+  <polygon points="1100,90 1140,105 1100,120 1060,105" class="step-emergency"/>
+  <text x="1100" y="110" text-anchor="middle" class="text-step">⚠</text>
+  <rect x="1000" y="125" width="200" height="25" fill="#FCE4EC" stroke="#E91E63" stroke-width="2" rx="5"/>
+  <text x="1100" y="137" text-anchor="middle" class="text-emergency">🚨 PROCEED TO PRODUCTION?</text>
+  <text x="1100" y="147" text-anchor="middle" class="text-detail">30-second decision window</text>
+  
+  <!-- Production Rollback Phase -->
+  
+  <!-- Step 8: Production Rollback -->
+  <circle cx="1200" cy="320" r="20" class="step-rollback"/>
+  <text x="1200" y="325" text-anchor="middle" class="text-step">8</text>
+  <rect x="1100" y="335" width="200" height="15" fill="#C8E6C9" stroke="#4CAF50" rx="3"/>
+  <text x="1200" y="345" text-anchor="middle" class="text-label">🎯 Production Rollback</text>
+  
+  <!-- Step 9: Traffic Switch -->
+  <circle cx="1300" cy="320" r="20" class="step-rollback"/>
+  <text x="1300" y="325" text-anchor="middle" class="text-step">9</text>
+  <rect x="1200" y="300" width="200" height="15" fill="#C8E6C9" stroke="#4CAF50" rx="3"/>
+  <text x="1300" y="310" text-anchor="middle" class="text-label">🔄 Instant Traffic Switch</text>
+  <text x="1300" y="350" text-anchor="middle" class="text-detail">Zero-downtime via digest ref</text>
+  
+  <!-- Verification Phase -->
+  
+  <!-- Step 10: Production Health -->
+  <circle cx="1300" cy="175" r="20" class="step-verify"/>
+  <text x="1300" y="180" text-anchor="middle" class="text-step">10</text>
+  <rect x="1200" y="190" width="200" height="15" fill="#E1BEE7" stroke="#9C27B0" rx="3"/>
+  <text x="1300" y="200" text-anchor="middle" class="text-label">✅ Production Healthy</text>
+  
+  <!-- Flow Arrows -->
+  
+  <!-- Detection to Decision -->
+  <line x1="220" y1="175" x2="260" y2="105" class="arrow-detect"/>
+  
+  <!-- Decision to Pipeline -->
+  <line x1="300" y1="105" x2="380" y2="245" class="arrow-trigger"/>
+  
+  <!-- Pipeline to ACR -->
+  <line x1="420" y1="245" x2="530" y2="395" class="arrow-rollback"/>
+  
+  <!-- ACR to Security -->
+  <line x1="570" y1="395" x2="680" y2="465" class="arrow-rollback"/>
+  
+  <!-- Security to Staging -->
+  <line x1="720" y1="465" x2="780" y2="340" class="arrow-verify"/>
+  
+  <!-- Staging verification -->
+  <line x1="820" y1="320" x2="930" y2="320" class="arrow-rollback"/>
+  
+  <!-- Critical decision -->
+  <line x1="970" y1="320" x2="1060" y2="120" class="arrow-verify"/>
+  
+  <!-- Production rollback -->
+  <line x1="1120" y1="120" x2="1180" y2="320" class="arrow-emergency"/>
+  <line x1="1220" y1="320" x2="1280" y2="320" class="arrow-rollback"/>
+  
+  <!-- Final verification -->
+  <line x1="1300" y1="300" x2="1300" y2="195" class="arrow-verify"/>
+  
+  <!-- Process Details -->
+  <rect x="50" y="550" width="1300" height="320" fill="#F8F9FA" stroke="#DDD" rx="8"/>
+  <text x="70" y="575" class="text-title">Rollback Process Details &amp; Automation</text>
+  
+  <!-- Emergency Response -->
+  <rect x="70" y="590" width="300" height="120" fill="#FFEBEE" stroke="#F44336" rx="5"/>
+  <text x="80" y="610" class="text-lane">🚨 Emergency Response (Steps 1-3)</text>
+  <text x="80" y="630" class="text-label">• Automated alerts: CPU &gt; 80%, errors &gt; 5%</text>
+  <text x="80" y="645" class="text-label">• Human confirmation required (30s timeout)</text>
+  <text x="80" y="660" class="text-label">• Emergency pipeline triggered immediately</text>
+  <text x="80" y="675" class="text-label">• All non-essential builds cancelled</text>
+  <text x="80" y="690" class="text-label">• Incident channel notifications sent</text>
+  
+  <!-- Version Recovery -->
+  <rect x="390" y="590" width="300" height="120" fill="#E8F5E8" stroke="#4CAF50" rx="5"/>
+  <text x="400" y="610" class="text-lane">📋 Version Recovery (Steps 4-5)</text>
+  <text x="400" y="630" class="text-label">• Query deployment history (last 10 versions)</text>
+  <text x="400" y="645" class="text-label">• Identify last known good (LKG) digest</text>
+  <text x="400" y="660" class="text-label">• Verify Cosign signature against Azure KV</text>
+  <text x="400" y="675" class="text-label">• Validate digest exists in all ACRs</text>
+  <text x="400" y="690" class="text-label">• Automated fallback to N-2 if needed</text>
+  
+  <!-- Staged Rollback -->
+  <rect x="710" y="590" width="300" height="120" fill="#E1BEE7" stroke="#9C27B0" rx="5"/>
+  <text x="720" y="610" class="text-lane">🎯 Staged Rollback (Steps 6-7)</text>
+  <text x="720" y="630" class="text-label">• Staging environment rollback first</text>
+  <text x="720" y="645" class="text-label">• Health checks: /health, /ready endpoints</text>
+  <text x="720" y="660" class="text-label">• Integration test suite execution</text>
+  <text x="720" y="675" class="text-label">• 30-second confidence window</text>
+  <text x="720" y="690" class="text-label">• Automatic abort if tests fail</text>
+  
+  <!-- Production Execution -->
+  <rect x="1030" y="590" width="300" height="120" fill="#FFF3E0" stroke="#FF9800" rx="5"/>
+  <text x="1040" y="610" class="text-lane">⚡ Production Execution (Steps 8-10)</text>
+  <text x="1040" y="630" class="text-label">• Zero-downtime deployment update</text>
+  <text x="1040" y="645" class="text-label">• Kubernetes rolling update (digest ref)</text>
+  <text x="1040" y="660" class="text-label">• Traffic gradually shifted to LKG pods</text>
+  <text x="1040" y="675" class="text-label">• Continuous health monitoring</text>
+  <text x="1040" y="690" class="text-label">• 99.9% availability maintained</text>
+  
+  <!-- Automation Rules -->
+  <rect x="70" y="730" width="610" height="130" fill="#E3F2FD" stroke="#2196F3" rx="5"/>
+  <text x="80" y="750" class="text-lane">🤖 Automation Rules &amp; Triggers</text>
+  <text x="80" y="770" class="text-label">🔴 Automatic Rollback Triggers:</text>
+  <text x="100" y="785" class="text-label">• Error rate &gt; 5% for 2 consecutive minutes</text>
+  <text x="100" y="800" class="text-label">• CPU utilization &gt; 90% for 3 minutes</text>
+  <text x="100" y="815" class="text-label">• Memory usage &gt; 85% with OOM events</text>
+  <text x="100" y="830" class="text-label">• Health check failures &gt; 50% of pods</text>
+  <text x="100" y="845" class="text-label">• Manual trigger via secure API endpoint</text>
+  
+  <!-- Success Metrics -->
+  <rect x="700" y="730" width="630" height="130" fill="#F1F8E9" stroke="#689F38" rx="5"/>
+  <text x="710" y="750" class="text-lane">✅ Success Metrics &amp; Recovery Targets</text>
+  <text x="710" y="770" class="text-label">⏱️ Recovery Time Objective (RTO): &lt; 5 minutes</text>
+  <text x="710" y="785" class="text-label">💾 Recovery Point Objective (RPO): &lt; 1 minute</text>
+  <text x="710" y="800" class="text-label">🎯 Success Rate: &gt; 98% rollback reliability</text>
+  <text x="710" y="815" class="text-label">📊 Mean Time to Recovery (MTTR): &lt; 3 minutes</text>
+  <text x="710" y="830" class="text-label">🔄 Availability: 99.9% during rollback operations</text>
+  <text x="710" y="845" class="text-label">🛡️ Zero data loss, complete state preservation</text>
+</svg>

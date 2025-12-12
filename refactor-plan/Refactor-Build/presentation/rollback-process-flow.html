@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneStream Rollback Process Flow</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .diagram-container {
+            background-color: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .diagram-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #dc3545;
+        }
+        
+        svg {
+            width: 100%;
+            height: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+        }
+        
+        .step-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .step-info h3 {
+            margin-top: 0;
+            color: #dc3545;
+        }
+        
+        .phase {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .phase-detection { background-color: #ffebee; }
+        .phase-decision { background-color: #fff3e0; }
+        .phase-execution { background-color: #f3e5f5; }
+        .phase-verification { background-color: #e8f5e8; }
+        .phase-recovery { background-color: #e3f2fd; }
+        
+        .step-number {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            background-color: #dc3545;
+            color: white;
+            text-align: center;
+            line-height: 25px;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .timing-info {
+            background-color: #fff59d;
+            border: 2px solid #fbc02d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .timing-info h3 {
+            margin-top: 0;
+            color: #e65100;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <div class="diagram-title">Diagram 3: OneStream Automated Rollback Process Flow</div>
+        
+        <svg viewBox="0 0 1500 1100" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background -->
+            <rect width="1500" height="1100" fill="#ffffff" stroke="none"/>
+            
+            <!-- Swimlanes -->
+            <!-- Monitoring System Lane -->
+            <rect x="0" y="0" width="1500" height="100" fill="#ffebee" stroke="#f44336" stroke-width="1"/>
+            <text x="20" y="50" font-size="14" font-weight="bold" fill="#c62828">Monitoring &amp; Alerting</text>
+            
+            <!-- DevOps Engineer Lane -->
+            <rect x="0" y="100" width="1500" height="80" fill="#e3f2fd" stroke="#2196f3" stroke-width="1"/>
+            <text x="20" y="140" font-size="14" font-weight="bold" fill="#1976d2">DevOps Engineer</text>
+            
+            <!-- Azure DevOps Automation Lane -->
+            <rect x="0" y="180" width="1500" height="120" fill="#e8f4fd" stroke="#0078d4" stroke-width="1"/>
+            <text x="20" y="240" font-size="14" font-weight="bold" fill="#0066b2">Azure DevOps Automation</text>
+            
+            <!-- Kubernetes Control Lane -->
+            <rect x="0" y="300" width="1500" height="120" fill="#f3e5f5" stroke="#9c27b0" stroke-width="1"/>
+            <text x="20" y="360" font-size="14" font-weight="bold" fill="#7b1fa2">Kubernetes Control</text>
+            
+            <!-- Application Service Lane -->
+            <rect x="0" y="420" width="1500" height="100" fill="#e8f5e8" stroke="#4caf50" stroke-width="1"/>
+            <text x="20" y="470" font-size="14" font-weight="bold" fill="#2e7d32">Application Service</text>
+            
+            <!-- Container Registry Lane -->
+            <rect x="0" y="520" width="1500" height="80" fill="#fff3e0" stroke="#ff9800" stroke-width="1"/>
+            <text x="20" y="560" font-size="14" font-weight="bold" fill="#e65100">Container Registry</text>
+            
+            <!-- End Users Lane -->
+            <rect x="0" y="600" width="1500" height="100" fill="#f8f9fa" stroke="#6c757d" stroke-width="1"/>
+            <text x="20" y="650" font-size="14" font-weight="bold" fill="#495057">End Users</text>
+            
+            <!-- Post-Incident Lane -->
+            <rect x="0" y="700" width="1500" height="100" fill="#fffde7" stroke="#fbc02d" stroke-width="1"/>
+            <text x="20" y="750" font-size="14" font-weight="bold" fill="#f57f17">Post-Incident Actions</text>
+            
+            <!-- Timeline -->
+            <line x1="100" y1="0" x2="100" y2="800" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="75" y="820" font-size="12" fill="#666">T+0</text>
+            
+            <line x1="400" y1="0" x2="400" y2="800" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="375" y="820" font-size="12" fill="#666">T+30s</text>
+            
+            <line x1="800" y1="0" x2="800" y2="800" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="775" y="820" font-size="12" fill="#666">T+2min</text>
+            
+            <line x1="1200" y1="0" x2="1200" y2="800" stroke="#cccccc" stroke-width="2" stroke-dasharray="5,5"/>
+            <text x="1175" y="820" font-size="12" fill="#666">T+5min</text>
+            
+            <!-- Crisis Detection Phase -->
+            
+            <!-- Step 1: Health Issues Detected -->
+            <circle cx="150" cy="50" r="20" fill="#f44336" stroke="#c62828" stroke-width="2"/>
+            <text x="150" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">1</text>
+            <rect x="90" y="70" width="120" height="25" fill="#ffcdd2" stroke="#f44336" rx="3"/>
+            <text x="150" y="85" text-anchor="middle" font-size="10">Detect Health Issues</text>
+            
+            <!-- Step 2: Alert Threshold -->
+            <circle cx="250" cy="50" r="20" fill="#f44336" stroke="#c62828" stroke-width="2"/>
+            <text x="250" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">2</text>
+            <rect x="180" y="70" width="140" height="25" fill="#ffcdd2" stroke="#f44336" rx="3"/>
+            <text x="250" y="85" text-anchor="middle" font-size="10">Trigger Alert (&gt;3 failures)</text>
+            
+            <!-- Step 3: Notify DevOps -->
+            <circle cx="350" cy="50" r="20" fill="#f44336" stroke="#c62828" stroke-width="2"/>
+            <text x="350" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">3</text>
+            <rect x="280" y="70" width="140" height="25" fill="#ffcdd2" stroke="#f44336" rx="3"/>
+            <text x="350" y="85" text-anchor="middle" font-size="10">Notify DevOps Team</text>
+            
+            <!-- Decision Diamond: Auto or Manual -->
+            <polygon points="450,130 480,140 450,150 420,140" fill="#ffc107" stroke="#f57c00" stroke-width="2"/>
+            <text x="450" y="145" text-anchor="middle" font-size="9" font-weight="bold">Auto?</text>
+            
+            <!-- Step 4: Trigger Rollback Pipeline -->
+            <circle cx="550" cy="240" r="20" fill="#0078d4" stroke="#0066b2" stroke-width="2"/>
+            <text x="550" y="245" text-anchor="middle" font-size="12" font-weight="bold" fill="white">4</text>
+            <rect x="470" y="260" width="160" height="25" fill="#cce7ff" stroke="#0078d4" rx="3"/>
+            <text x="550" y="275" text-anchor="middle" font-size="10">Trigger Rollback Pipeline</text>
+            
+            <!-- Step 5: Capture Current State -->
+            <circle cx="700" cy="240" r="20" fill="#0078d4" stroke="#0066b2" stroke-width="2"/>
+            <text x="700" y="245" text-anchor="middle" font-size="12" font-weight="bold" fill="white">5</text>
+            <rect x="620" y="260" width="160" height="25" fill="#cce7ff" stroke="#0078d4" rx="3"/>
+            <text x="700" y="275" text-anchor="middle" font-size="10">Capture Current State</text>
+            
+            <!-- Step 6: Get Previous Version -->
+            <circle cx="550" cy="360" r="20" fill="#9c27b0" stroke="#7b1fa2" stroke-width="2"/>
+            <text x="550" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="white">6</text>
+            <rect x="460" y="380" width="180" height="25" fill="#e1bee7" stroke="#9c27b0" rx="3"/>
+            <text x="550" y="395" text-anchor="middle" font-size="10">Get Previous Image Reference</text>
+            
+            <!-- Step 7: Verify Previous Image -->
+            <circle cx="700" cy="560" r="20" fill="#ff9800" stroke="#e65100" stroke-width="2"/>
+            <text x="700" y="565" text-anchor="middle" font-size="12" font-weight="bold" fill="white">7</text>
+            <rect x="610" y="580" width="180" height="25" fill="#ffe0b2" stroke="#ff9800" rx="3"/>
+            <text x="700" y="595" text-anchor="middle" font-size="10">Verify Previous Image Exists</text>
+            
+            <!-- Step 8: Deploy Canary -->
+            <circle cx="850" cy="360" r="20" fill="#9c27b0" stroke="#7b1fa2" stroke-width="2"/>
+            <text x="850" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="white">8</text>
+            <rect x="770" y="380" width="160" height="25" fill="#e1bee7" stroke="#9c27b0" rx="3"/>
+            <text x="850" y="395" text-anchor="middle" font-size="10">Deploy Canary (Old Ver)</text>
+            
+            <!-- Step 9: Configure Traffic Split -->
+            <circle cx="1000" cy="360" r="20" fill="#9c27b0" stroke="#7b1fa2" stroke-width="2"/>
+            <text x="1000" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="white">9</text>
+            <rect x="910" y="380" width="180" height="25" fill="#e1bee7" stroke="#9c27b0" rx="3"/>
+            <text x="1000" y="395" text-anchor="middle" font-size="10">Traffic Split (90% old/10% new)</text>
+            
+            <!-- Step 10: Monitor Canary -->
+            <circle cx="1150" cy="50" r="20" fill="#f44336" stroke="#c62828" stroke-width="2"/>
+            <text x="1150" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="white">10</text>
+            <rect x="1070" y="70" width="160" height="25" fill="#ffcdd2" stroke="#f44336" rx="3"/>
+            <text x="1150" y="85" text-anchor="middle" font-size="10">Monitor Canary (2 min)</text>
+            
+            <!-- Decision Diamond: Health Improved? -->
+            <polygon points="1250,130 1280,140 1250,150 1220,140" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="1250" y="145" text-anchor="middle" font-size="9" font-weight="bold">OK?</text>
+            
+            <!-- Step 11: Full Rollback -->
+            <circle cx="1350" cy="360" r="20" fill="#9c27b0" stroke="#7b1fa2" stroke-width="2"/>
+            <text x="1350" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="white">11</text>
+            <rect x="1270" y="380" width="160" height="25" fill="#e1bee7" stroke="#9c27b0" rx="3"/>
+            <text x="1350" y="395" text-anchor="middle" font-size="10">Full Rollback Execute</text>
+            
+            <!-- Step 12: Update Deployment -->
+            <circle cx="1200" cy="470" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="1200" y="475" text-anchor="middle" font-size="12" font-weight="bold" fill="white">12</text>
+            <rect x="1120" y="490" width="160" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="1200" y="505" text-anchor="middle" font-size="10">Update Deployment</text>
+            
+            <!-- Step 13: Rolling Update -->
+            <circle cx="1350" cy="470" r="20" fill="#4caf50" stroke="#2e7d32" stroke-width="2"/>
+            <text x="1350" y="475" text-anchor="middle" font-size="12" font-weight="bold" fill="white">13</text>
+            <rect x="1270" y="490" width="160" height="25" fill="#c8e6c9" stroke="#4caf50" rx="3"/>
+            <text x="1350" y="505" text-anchor="middle" font-size="10">Rolling Update to Old</text>
+            
+            <!-- Step 14: Service Restoration -->
+            <circle cx="1200" cy="650" r="20" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+            <text x="1200" y="655" text-anchor="middle" font-size="12" font-weight="bold" fill="white">14</text>
+            <rect x="1120" y="670" width="160" height="25" fill="#e9ecef" stroke="#6c757d" rx="3"/>
+            <text x="1200" y="685" text-anchor="middle" font-size="10">Service Restored</text>
+            
+            <!-- Post-Incident Actions -->
+            <!-- Step 15: Document Incident -->
+            <circle cx="500" cy="750" r="20" fill="#fbc02d" stroke="#f57f17" stroke-width="2"/>
+            <text x="500" y="755" text-anchor="middle" font-size="12" font-weight="bold" fill="black">15</text>
+            <rect x="420" y="770" width="160" height="25" fill="#fff9c4" stroke="#fbc02d" rx="3"/>
+            <text x="500" y="785" text-anchor="middle" font-size="10">Document Incident</text>
+            
+            <!-- Step 16: Tag Failed Deployment -->
+            <circle cx="700" cy="750" r="20" fill="#fbc02d" stroke="#f57f17" stroke-width="2"/>
+            <text x="700" y="755" text-anchor="middle" font-size="12" font-weight="bold" fill="black">16</text>
+            <rect x="620" y="770" width="160" height="25" fill="#fff9c4" stroke="#fbc02d" rx="3"/>
+            <text x="700" y="785" text-anchor="middle" font-size="10">Tag Failed Deployment</text>
+            
+            <!-- Step 17: Schedule Post-Mortem -->
+            <circle cx="900" cy="750" r="20" fill="#fbc02d" stroke="#f57f17" stroke-width="2"/>
+            <text x="900" y="755" text-anchor="middle" font-size="12" font-weight="bold" fill="black">17</text>
+            <rect x="820" y="770" width="160" height="25" fill="#fff9c4" stroke="#fbc02d" rx="3"/>
+            <text x="900" y="785" text-anchor="middle" font-size="10">Schedule Post-Mortem</text>
+            
+            <!-- Process Flow Arrows -->
+            <!-- Detection Flow -->
+            <line x1="170" y1="50" x2="230" y2="50" stroke="#f44336" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+            <line x1="270" y1="50" x2="330" y2="50" stroke="#f44336" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+            <line x1="370" y1="50" x2="420" y2="130" stroke="#f44336" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+            
+            <!-- Decision to Automation -->
+            <line x1="480" y1="140" x2="530" y2="240" stroke="#0078d4" stroke-width="3" marker-end="url(#arrowhead-blue)"/>
+            <line x1="570" y1="240" x2="680" y2="240" stroke="#0078d4" stroke-width="3" marker-end="url(#arrowhead-blue)"/>
+            
+            <!-- Kubernetes Operations -->
+            <line x1="700" y1="260" x2="550" y2="340" stroke="#9c27b0" stroke-width="3" marker-end="url(#arrowhead-purple)"/>
+            <line x1="570" y1="360" x2="680" y2="560" stroke="#ff9800" stroke-width="3" marker-end="url(#arrowhead-orange)"/>
+            <line x1="720" y1="560" x2="830" y2="360" stroke="#9c27b0" stroke-width="3" marker-end="url(#arrowhead-purple)"/>
+            <line x1="870" y1="360" x2="980" y2="360" stroke="#9c27b0" stroke-width="3" marker-end="url(#arrowhead-purple)"/>
+            
+            <!-- Monitoring and Decision -->
+            <line x1="1000" y1="340" x2="1150" y2="70" stroke="#f44336" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+            <line x1="1170" y1="50" x2="1220" y2="130" stroke="#f44336" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+            
+            <!-- Rollback Execution -->
+            <line x1="1280" y1="140" x2="1330" y2="360" stroke="#9c27b0" stroke-width="3" marker-end="url(#arrowhead-purple)"/>
+            <line x1="1350" y1="380" x2="1200" y2="450" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            <line x1="1220" y1="470" x2="1330" y2="470" stroke="#4caf50" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+            <line x1="1350" y1="490" x2="1200" y2="630" stroke="#6c757d" stroke-width="3" marker-end="url(#arrowhead-gray)"/>
+            
+            <!-- Post-Incident Flow -->
+            <line x1="1200" y1="670" x2="500" y2="730" stroke="#fbc02d" stroke-width="3" marker-end="url(#arrowhead-yellow)"/>
+            <line x1="520" y1="750" x2="680" y2="750" stroke="#fbc02d" stroke-width="3" marker-end="url(#arrowhead-yellow)"/>
+            <line x1="720" y1="750" x2="880" y2="750" stroke="#fbc02d" stroke-width="3" marker-end="url(#arrowhead-yellow)"/>
+            
+            <!-- Alert Status Indicators -->
+            <rect x="50" y="850" width="300" height="80" fill="#ffebee" stroke="#f44336" stroke-width="2" rx="5"/>
+            <text x="200" y="870" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">🚨 Critical Alert Status</text>
+            <text x="70" y="890" font-size="10" fill="#c62828">• Health check failures detected</text>
+            <text x="70" y="905" font-size="10" fill="#c62828">• Automatic rollback initiated</text>
+            <text x="70" y="920" font-size="10" fill="#c62828">• Service restoration in progress</text>
+            
+            <!-- Success Indicators -->
+            <rect x="400" y="850" width="300" height="80" fill="#e8f5e8" stroke="#4caf50" stroke-width="2" rx="5"/>
+            <text x="550" y="870" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">✅ Recovery Success</text>
+            <text x="420" y="890" font-size="10" fill="#2e7d32">• Previous version restored</text>
+            <text x="420" y="905" font-size="10" fill="#2e7d32">• Service health confirmed</text>
+            <text x="420" y="920" font-size="10" fill="#2e7d32">• Users can access application</text>
+            
+            <!-- Performance Metrics -->
+            <rect x="750" y="850" width="300" height="80" fill="#fff3e0" stroke="#ff9800" stroke-width="2" rx="5"/>
+            <text x="900" y="870" text-anchor="middle" font-size="12" font-weight="bold" fill="#e65100">📊 Performance Metrics</text>
+            <text x="770" y="890" font-size="10" fill="#e65100">• Detection to action: &lt; 30 seconds</text>
+            <text x="770" y="905" font-size="10" fill="#e65100">• Full rollback: &lt; 5 minutes</text>
+            <text x="770" y="920" font-size="10" fill="#e65100">• Service restoration: &lt; 10 minutes</text>
+            
+            <!-- Learning Outcomes -->
+            <rect x="1100" y="850" width="300" height="80" fill="#e3f2fd" stroke="#2196f3" stroke-width="2" rx="5"/>
+            <text x="1250" y="870" text-anchor="middle" font-size="12" font-weight="bold" fill="#1976d2">📚 Learning Actions</text>
+            <text x="1120" y="890" font-size="10" fill="#1976d2">• Incident documentation complete</text>
+            <text x="1120" y="905" font-size="10" fill="#1976d2">• Failed deployment tagged</text>
+            <text x="1120" y="920" font-size="10" fill="#1976d2">• Post-mortem scheduled</text>
+            
+            <!-- Arrow markers -->
+            <defs>
+                <marker id="arrowhead-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#f44336"/>
+                </marker>
+                <marker id="arrowhead-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#0078d4"/>
+                </marker>
+                <marker id="arrowhead-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#9c27b0"/>
+                </marker>
+                <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#ff9800"/>
+                </marker>
+                <marker id="arrowhead-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#4caf50"/>
+                </marker>
+                <marker id="arrowhead-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#6c757d"/>
+                </marker>
+                <marker id="arrowhead-yellow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#fbc02d"/>
+                </marker>
+            </defs>
+            
+            <!-- Critical Path Highlight -->
+            <rect x="1200" y="950" width="250" height="50" fill="#ffcdd2" stroke="#f44336" stroke-width="2" rx="5"/>
+            <text x="1325" y="970" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">🎯 Critical Success Path</text>
+            <text x="1325" y="985" text-anchor="middle" font-size="10" fill="#c62828">Detection → Decision → Rollback → Verification</text>
+        </svg>
+        
+        <div class="step-info">
+            <h3>Detailed Rollback Steps</h3>
+            
+            <div class="phase phase-detection">
+                <strong>🚨 Detection Phase (Steps 1-3) - Target: &lt;30 seconds</strong>
+                <div><span class="step-number">1</span><strong>Health Monitoring:</strong> Continuous monitoring detects application health degradation</div>
+                <div><span class="step-number">2</span><strong>Alert Threshold:</strong> System triggers alert when more than 3 consecutive health check failures occur</div>
+                <div><span class="step-number">3</span><strong>Team Notification:</strong> DevOps team receives immediate notification via PagerDuty/Teams</div>
+            </div>
+            
+            <div class="phase phase-decision">
+                <strong>⚡ Decision Phase (Steps 4-5) - Target: &lt;30 seconds</strong>
+                <div><span class="step-number">4</span><strong>Automatic Trigger:</strong> If configured for auto-rollback, pipeline triggers immediately</div>
+                <div><span class="step-number">5</span><strong>State Capture:</strong> Current deployment state captured for audit trail and potential recovery</div>
+            </div>
+            
+            <div class="phase phase-execution">
+                <strong>🔄 Rollback Execution (Steps 6-9) - Target: &lt;3 minutes</strong>
+                <div><span class="step-number">6</span><strong>Previous Version:</strong> Retrieve last known good deployment configuration and image digest</div>
+                <div><span class="step-number">7</span><strong>Image Verification:</strong> Verify previous container image exists and signature is valid</div>
+                <div><span class="step-number">8</span><strong>Canary Deployment:</strong> Deploy previous version as canary (10% traffic) for validation</div>
+                <div><span class="step-number">9</span><strong>Traffic Management:</strong> Configure traffic split (90% old/10% current) for gradual rollback</div>
+            </div>
+            
+            <div class="phase phase-verification">
+                <strong>✅ Verification Phase (Steps 10-13) - Target: &lt;2 minutes</strong>
+                <div><span class="step-number">10</span><strong>Canary Monitoring:</strong> Monitor canary deployment health for 2 minutes</div>
+                <div><span class="step-number">11</span><strong>Full Rollback:</strong> If canary healthy, execute full rollback to previous version</div>
+                <div><span class="step-number">12</span><strong>Manifest Update:</strong> Update Kubernetes deployment manifest with previous image digest</div>
+                <div><span class="step-number">13</span><strong>Rolling Update:</strong> Kubernetes performs rolling update to previous version pods</div>
+            </div>
+            
+            <div class="phase phase-recovery">
+                <strong>🎯 Recovery Confirmation (Step 14) - Target: &lt;1 minute</strong>
+                <div><span class="step-number">14</span><strong>Service Restoration:</strong> Verify all pods healthy and service accessible to end users</div>
+            </div>
+            
+            <div class="phase phase-recovery">
+                <strong>📚 Post-Incident Actions (Steps 15-17) - Within 24 hours</strong>
+                <div><span class="step-number">15</span><strong>Incident Documentation:</strong> Log complete incident timeline with metrics and actions taken</div>
+                <div><span class="step-number">16</span><strong>Deployment Tagging:</strong> Tag failed deployment in ACR for investigation and prevention</div>
+                <div><span class="step-number">17</span><strong>Post-Mortem:</strong> Schedule blameless post-mortem to identify improvements</div>
+            </div>
+        </div>
+        
+        <div class="timing-info">
+            <h3>🎯 Rollback Performance Targets</h3>
+            <div><strong>Total Recovery Time:</strong> &lt; 5 minutes from detection to service restoration</div>
+            <div><strong>Detection Speed:</strong> &lt; 30 seconds from failure to alert</div>
+            <div><strong>Rollback Execution:</strong> &lt; 3 minutes for complete version revert</div>
+            <div><strong>Health Verification:</strong> &lt; 2 minutes to confirm service restoration</div>
+            <div><strong>Zero Data Loss:</strong> Immutable digests ensure exact previous version restoration</div>
+        </div>
+    </div>
+</body>
+</html>

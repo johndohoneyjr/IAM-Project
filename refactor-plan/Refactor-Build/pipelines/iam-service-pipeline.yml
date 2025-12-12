@@ -1,0 +1,223 @@
+# IAM Service Pipeline (Simplified Approach)
+# This is the pilot implementation for testing the new modular pipeline approach
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+    - feature/pipeline-refactor
+  paths:
+    include:
+    - src/iam/**
+    - charts/iam/**
+    - tests/iam/**
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - src/iam/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- template: templates/variables/common-variables.yml
+- template: templates/variables/iam-variables.yml
+- name: serviceName
+  value: 'iam'
+- name: containerRegistry
+  value: 'onestreamdev'
+- name: buildConfiguration
+  value: 'Release'
+
+name: 'IAM-$(Date:yyyyMMdd)$(Rev:.r)'
+
+stages:
+- stage: Build
+  displayName: 'Build IAM Service'
+  jobs:
+  - job: BuildContainer
+    displayName: 'Build IAM Container'
+    steps:
+    - checkout: self
+      fetchDepth: 1
+
+    - template: templates/steps/build-container.yml
+      parameters:
+        serviceName: $(serviceName)
+        containerRegistry: $(containerRegistry)
+        buildConfiguration: $(buildConfiguration)
+        dockerfile: 'src/iam/Dockerfile'
+
+- stage: Test
+  displayName: 'Test IAM Service'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: UnitTests
+    displayName: 'Run Unit Tests'
+    steps:
+    - template: templates/steps/run-unit-tests.yml
+      parameters:
+        serviceName: $(serviceName)
+        testProjects: 'tests/iam/**/*.csproj'
+
+  - job: IntegrationTests
+    displayName: 'Run Integration Tests'
+    dependsOn: UnitTests
+    steps:
+    - template: templates/steps/run-integration-tests.yml
+      parameters:
+        serviceName: $(serviceName)
+        testEnvironment: 'integration'
+
+  - job: SecurityScan
+    displayName: 'Security Vulnerability Scan'
+    steps:
+    - template: templates/steps/security-scan.yml
+      parameters:
+        serviceName: $(serviceName)
+        scanTarget: 'container'
+        imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+
+- stage: Sign
+  displayName: 'Sign Container'
+  dependsOn: 
+  - Build
+  - Test
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')))
+  jobs:
+  - job: SignContainer
+    displayName: 'Sign with Cosign'
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    steps:
+    - template: templates/steps/cosign-sign.yml
+      parameters:
+        serviceName: $(serviceName)
+        containerRegistry: $(containerRegistry)
+        imageDigest: $(imageDigest)
+        keyVaultName: 'onestream-cosign-kv'
+        signingKeyName: 'cosign-signing-key-dev'
+
+- stage: PromoteDev
+  displayName: 'Promote to Dev Environment'
+  dependsOn: 
+  - Sign
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: DeployToDev
+    displayName: 'Deploy IAM to Dev'
+    environment: 'dev'
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: templates/steps/deploy-with-verification.yml
+            parameters:
+              serviceName: $(serviceName)
+              environment: 'dev'
+              containerRegistry: $(containerRegistry)
+              imageDigest: $(imageDigest)
+              helmChart: 'charts/iam'
+
+- stage: PromoteStaging
+  displayName: 'Promote to Staging'
+  dependsOn: 
+  - Sign
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: PromoteToStaging
+    displayName: 'Promote IAM to Staging ACR'
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    steps:
+    - template: templates/steps/acr-direct-import.yml
+      parameters:
+        serviceName: $(serviceName)
+        sourceACR: 'onestreamdev'
+        targetACR: 'onestreamstaging'
+        imageDigest: $(imageDigest)
+
+  - deployment: DeployToStaging
+    displayName: 'Deploy IAM to Staging'
+    dependsOn: PromoteToStaging
+    environment: 'staging'
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: templates/steps/deploy-with-verification.yml
+            parameters:
+              serviceName: $(serviceName)
+              environment: 'staging'
+              containerRegistry: 'onestreamstaging'
+              imageDigest: $(imageDigest)
+              helmChart: 'charts/iam'
+
+- stage: PromoteProduction
+  displayName: 'Promote to Production'
+  dependsOn: 
+  - PromoteStaging
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')))
+  jobs:
+  - job: AwaitApproval
+    displayName: 'Await Production Approval'
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      displayName: 'Manual Approval for Production'
+      inputs:
+        notifyUsers: 'production-approvers@onestream.com'
+        instructions: 'Please review staging deployment and approve production release'
+        timeoutInMinutes: 1440 # 24 hours
+
+  - job: PromoteToProduction
+    displayName: 'Promote IAM to Production ACR'
+    dependsOn: AwaitApproval
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    steps:
+    - template: templates/steps/acr-direct-import.yml
+      parameters:
+        serviceName: $(serviceName)
+        sourceACR: 'onestreamstaging'
+        targetACR: 'onestreamprod'
+        imageDigest: $(imageDigest)
+        
+    # Additional production-specific signing with production key
+    - template: templates/steps/cosign-sign.yml
+      parameters:
+        serviceName: $(serviceName)
+        containerRegistry: 'onestreamprod'
+        imageDigest: $(imageDigest)
+        keyVaultName: 'onestream-cosign-kv'
+        signingKeyName: 'cosign-signing-key-prod'
+
+  - deployment: DeployToProduction
+    displayName: 'Deploy IAM to Production'
+    dependsOn: PromoteToProduction
+    environment: 'production'
+    variables:
+      imageDigest: $[ stageDependencies.Build.BuildContainer.outputs['buildContainer.IMAGE_DIGEST'] ]
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - template: templates/steps/deploy-with-verification.yml
+            parameters:
+              serviceName: $(serviceName)
+              environment: 'production'
+              containerRegistry: 'onestreamprod'
+              imageDigest: $(imageDigest)
+              helmChart: 'charts/iam'
+              requireFIPSCompliance: true

@@ -1,0 +1,319 @@
+# Test Pipeline Comparison Tool
+# Compares performance and output between legacy and new pipeline approaches
+
+trigger: none
+
+parameters:
+- name: testScenario
+  displayName: 'Test Scenario'
+  type: string
+  default: 'iam-service'
+  values:
+  - iam-service
+  - full-comparison
+  - performance-test
+
+- name: runLegacyPipeline
+  displayName: 'Run Legacy Pipeline for Comparison'
+  type: boolean
+  default: true
+
+- name: runNewPipeline
+  displayName: 'Run New Pipeline'
+  type: boolean
+  default: true
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- name: testRunId
+  value: '$(System.DefinitionId)-$(Build.BuildId)'
+- name: testTimestamp
+  value: $[format('{0:yyyy}-{0:MM}-{0:dd}T{0:HH}-{0:mm}-{0:ss}', pipeline.startTime)]
+
+stages:
+- stage: SetupTest
+  displayName: 'Setup Test Environment'
+  jobs:
+  - job: PrepareTest
+    displayName: 'Prepare Test Environment'
+    steps:
+    - script: |
+        echo "Setting up test environment for: ${{ parameters.testScenario }}"
+        echo "Test Run ID: $(testRunId)"
+        echo "Timestamp: $(testTimestamp)"
+        
+        # Create test tracking directory
+        mkdir -p test-results
+        
+        # Initialize test metadata
+        cat > test-results/test-metadata.json << EOF
+        {
+          "testRunId": "$(testRunId)",
+          "timestamp": "$(testTimestamp)",
+          "scenario": "${{ parameters.testScenario }}",
+          "legacyEnabled": ${{ parameters.runLegacyPipeline }},
+          "newEnabled": ${{ parameters.runNewPipeline }},
+          "buildId": "$(Build.BuildId)",
+          "buildNumber": "$(Build.BuildNumber)"
+        }
+        EOF
+      displayName: 'Initialize Test Metadata'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'test-results'
+        artifactName: 'TestSetup'
+
+- stage: RunLegacyPipeline
+  displayName: 'Run Legacy Pipeline'
+  dependsOn: SetupTest
+  condition: and(succeeded(), eq('${{ parameters.runLegacyPipeline }}', true))
+  jobs:
+  - job: TriggerLegacyPipeline
+    displayName: 'Trigger Legacy Package Build Data'
+    steps:
+    - task: TriggerPipeline@1
+      displayName: 'Trigger Legacy Pipeline'
+      inputs:
+        serviceConnection: 'azure-devops-service-connection'
+        project: '$(System.TeamProject)'
+        Pipeline: 'package-build-data'
+        Branch: '$(Build.SourceBranch)'
+        Parameters: |
+          {
+            "service_name": "iam",
+            "package_internal_sources": true,
+            "release_build_data": false
+          }
+        waitForCompletion: true
+      name: legacyTrigger
+
+    - script: |
+        # Record legacy pipeline metrics
+        LEGACY_START_TIME="$(legacyTrigger.startTime)"
+        LEGACY_END_TIME="$(legacyTrigger.finishTime)"
+        LEGACY_STATUS="$(legacyTrigger.result)"
+        LEGACY_BUILD_ID="$(legacyTrigger.buildId)"
+        
+        echo "Legacy pipeline completed:"
+        echo "Start: $LEGACY_START_TIME"
+        echo "End: $LEGACY_END_TIME"
+        echo "Status: $LEGACY_STATUS"
+        echo "Build ID: $LEGACY_BUILD_ID"
+        
+        # Calculate duration (simplified - in real scenario use proper date math)
+        cat > legacy-results.json << EOF
+        {
+          "type": "legacy",
+          "buildId": "$LEGACY_BUILD_ID",
+          "status": "$LEGACY_STATUS",
+          "startTime": "$LEGACY_START_TIME",
+          "endTime": "$LEGACY_END_TIME",
+          "triggered": true
+        }
+        EOF
+      displayName: 'Record Legacy Results'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'legacy-results.json'
+        artifactName: 'LegacyResults'
+
+- stage: RunNewPipeline
+  displayName: 'Run New Pipeline'
+  dependsOn: SetupTest
+  condition: and(succeeded(), eq('${{ parameters.runNewPipeline }}', true))
+  jobs:
+  - job: TriggerNewPipeline
+    displayName: 'Trigger New IAM Pipeline'
+    steps:
+    - task: TriggerPipeline@1
+      displayName: 'Trigger New Pipeline'
+      inputs:
+        serviceConnection: 'azure-devops-service-connection'
+        project: '$(System.TeamProject)'
+        Pipeline: 'iam-service-pipeline'
+        Branch: '$(Build.SourceBranch)'
+        waitForCompletion: true
+      name: newTrigger
+
+    - script: |
+        # Record new pipeline metrics
+        NEW_START_TIME="$(newTrigger.startTime)"
+        NEW_END_TIME="$(newTrigger.finishTime)"
+        NEW_STATUS="$(newTrigger.result)"
+        NEW_BUILD_ID="$(newTrigger.buildId)"
+        
+        echo "New pipeline completed:"
+        echo "Start: $NEW_START_TIME"
+        echo "End: $NEW_END_TIME"  
+        echo "Status: $NEW_STATUS"
+        echo "Build ID: $NEW_BUILD_ID"
+        
+        cat > new-results.json << EOF
+        {
+          "type": "new",
+          "buildId": "$NEW_BUILD_ID",
+          "status": "$NEW_STATUS",
+          "startTime": "$NEW_START_TIME",
+          "endTime": "$NEW_END_TIME",
+          "triggered": true
+        }
+        EOF
+      displayName: 'Record New Results'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: 'new-results.json'
+        artifactName: 'NewResults'
+
+- stage: CompareResults
+  displayName: 'Compare Pipeline Results'
+  dependsOn: 
+  - RunLegacyPipeline
+  - RunNewPipeline
+  condition: always()
+  jobs:
+  - job: AnalyzeResults
+    displayName: 'Analyze and Compare Results'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Test Artifacts'
+      inputs:
+        buildType: 'current'
+        downloadType: 'specific'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - task: PythonScript@0
+      displayName: 'Generate Comparison Report'
+      inputs:
+        scriptSource: 'inline'
+        script: |
+          import json
+          import os
+          from datetime import datetime
+          
+          # Load test metadata
+          with open('$(System.ArtifactsDirectory)/TestSetup/test-metadata.json', 'r') as f:
+              metadata = json.load(f)
+          
+          print(f"Analyzing test run: {metadata['testRunId']}")
+          
+          # Initialize comparison data
+          comparison = {
+              "testRun": metadata,
+              "legacy": None,
+              "new": None,
+              "comparison": {}
+          }
+          
+          # Load legacy results if available
+          legacy_file = '$(System.ArtifactsDirectory)/LegacyResults/legacy-results.json'
+          if os.path.exists(legacy_file):
+              with open(legacy_file, 'r') as f:
+                  comparison["legacy"] = json.load(f)
+          
+          # Load new results if available
+          new_file = '$(System.ArtifactsDirectory)/NewResults/new-results.json'
+          if os.path.exists(new_file):
+              with open(new_file, 'r') as f:
+                  comparison["new"] = json.load(f)
+          
+          # Perform comparison analysis
+          if comparison["legacy"] and comparison["new"]:
+              print("Comparing both pipelines...")
+              
+              # Status comparison
+              legacy_success = comparison["legacy"]["status"] == "succeeded"
+              new_success = comparison["new"]["status"] == "succeeded"
+              
+              comparison["comparison"] = {
+                  "legacy_success": legacy_success,
+                  "new_success": new_success,
+                  "both_successful": legacy_success and new_success,
+                  "improvement": new_success and not legacy_success,
+                  "regression": legacy_success and not new_success
+              }
+              
+              if comparison["comparison"]["both_successful"]:
+                  print("✅ Both pipelines succeeded")
+              elif comparison["comparison"]["improvement"]:
+                  print("✅ New pipeline succeeded where legacy failed")
+              elif comparison["comparison"]["regression"]:
+                  print("❌ New pipeline failed where legacy succeeded")
+              else:
+                  print("❌ Both pipelines failed")
+          
+          elif comparison["new"]:
+              print("Only new pipeline was tested")
+              new_success = comparison["new"]["status"] == "succeeded"
+              print(f"New pipeline status: {'✅ Success' if new_success else '❌ Failed'}")
+          
+          elif comparison["legacy"]:
+              print("Only legacy pipeline was tested")
+              legacy_success = comparison["legacy"]["status"] == "succeeded"
+              print(f"Legacy pipeline status: {'✅ Success' if legacy_success else '❌ Failed'}")
+          
+          # Save comparison report
+          with open('comparison-report.json', 'w') as f:
+              json.dump(comparison, f, indent=2)
+          
+          print("Comparison report generated")
+
+    - task: Bash@3
+      displayName: 'Generate Performance Metrics'
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Generating performance analysis..."
+          
+          # Create performance summary
+          cat > performance-summary.md << 'EOF'
+          # Pipeline Comparison Report
+          
+          **Test Run:** $(testRunId)
+          **Timestamp:** $(testTimestamp)
+          **Scenario:** ${{ parameters.testScenario }}
+          
+          ## Results Summary
+          
+          | Pipeline | Status | Duration | Build ID |
+          |----------|---------|----------|----------|
+          | Legacy | TBD | TBD | TBD |
+          | New | TBD | TBD | TBD |
+          
+          ## Key Metrics
+          
+          - **Time Improvement:** TBD
+          - **Success Rate:** TBD
+          - **Resource Efficiency:** TBD
+          
+          ## Recommendations
+          
+          Based on this test run:
+          1. TBD
+          2. TBD
+          3. TBD
+          
+          ---
+          *Generated automatically by pipeline comparison tool*
+          EOF
+          
+          echo "Performance summary created"
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Comparison Results'
+      inputs:
+        pathToPublish: '.'
+        artifactName: 'ComparisonResults'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'comparison-report.json'
+        testRunTitle: 'Pipeline Comparison - ${{ parameters.testScenario }}'
+        failTaskOnFailedTests: false
