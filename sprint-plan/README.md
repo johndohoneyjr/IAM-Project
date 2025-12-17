@@ -6,13 +6,15 @@ This plan sequences the IAM POC stories into four 2-week sprints. Critical gatin
 - Jeff: Code build / pipeline refactor
 - Tony: Release pipeline / IaC
 - Chuck: ADO permissions
+- Steve Rogers: AzDO Observability / Dynatrace
+- TBD MSFT Dynatrace SME: Dynatrace integration
 - SWAT-Eng-1: Containers and packaging
 - SWAT-Eng-2: IaC support / AKS templates
 
 ## Sprint Goals and Scope
-- **Sprint 1 (Weeks 1-2)**: Clear permissions gate and lock in code-build guardrails.
-  - Stories/Tasks: STORY-01; STORY-02 tasks TASK-02-01, TASK-02-02; start TASK-02-03 draft.
-  - Deliverables: Permissions matrix applied; PR policies enforcing unit tests + security scans; draft generic build template.
+- **Sprint 1 (Weeks 1-2)**: Clear permissions gate, lock in code-build guardrails, and establish pipeline observability.
+  - Stories/Tasks: STORY-01; STORY-02 tasks TASK-02-01, TASK-02-02; start TASK-02-03 draft; STORY-07 TASK-07-01.
+  - Deliverables: Permissions matrix applied; PR policies enforcing unit tests + security scans; draft generic build template; Dynatrace setup and initial configuration complete.
 - **Sprint 2 (Weeks 3-4)**: Finish build templates and modernize container build/package flow.
   - Stories/Tasks: Complete TASK-02-03; STORY-03 tasks TASK-03-01, TASK-03-02, TASK-03-03.
   - Deliverables: Reusable build template validated in IAM; IAM packaging split per service with centralized deps.

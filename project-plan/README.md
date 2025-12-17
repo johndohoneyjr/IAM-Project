@@ -30,3 +30,6 @@ This plan translates the planning meeting into actionable user stories and tasks
 ## Source Alignment
 - Outline and estimates derived directly from planning meeting notes.
 - Terminology and sequencing align with existing refactor-plan docs (`stage-1` foundations, `stage-2` IAM pipeline focus).
+
+## Reference
+https://github.com/Dynatrace/dynatrace-configuration-as-code-samples/tree/main/azure_devops_observability
