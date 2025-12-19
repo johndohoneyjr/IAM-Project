@@ -4,3 +4,69 @@ Observability and reporting
 2. Completion Metrics
 
 DynaTrace pulling data
+
+
+
+First run time
+run statistics
+95% success rate success metric - 90% minimum
+
+Delivery Health KPIs (pipeline effectiveness)
+These show whether CI/CD is helping or hindering teams.
+Pipeline Success Rate
+Measure: Successful runs / total runs
+Target: >90%
+Track by stage:
+Build
+Test
+Security
+Deploy
+Low success here = noisy pipeline.
+ 
+Pipeline Duration
+Measure: Code push → deployable artifact
+Good: <10–15 minutes for most services
+Warning: >30 minutes
+Long pipelines kill developer throughput.
+ 
+Commit-to-Merge Time
+What it reveals: Review friction and batching
+Target: <24 hours
+Elite teams: <4 hours
+ 
+Security Scan Pass Rate
+Track:
+% builds blocked by critical vulns
+Time to remediate critical findings
+Security that slows delivery without reducing risk is broken.
+ 
+
+ Change Size
+Measure: Lines changed per deploy
+
+Smaller changes = lower risk.
+ 
+Deployment Frequency
+What it tells you: How fast value reaches users
+Good: Multiple deploys per day (high performers)
+Bad smell: Big batch releases, “release weekends”
+Report as:
+Deploys per service per week
+Trend over time (↑ is good)
+ 
+
+ List of other Processes that can cause failure
+ 1. ServiceNow goes offline
+ 2. Determine other critical process that need to be online
+ SetUp Alerts and Notifications
+
+ Define meaning of "Next Gen" pipelines1. 
+ More than just what is in build-pipelines.yaml
+
+ List of In-Scope Pipelines for 4/15/2026
+
+ So the scope for the SWAT team is focused on build to release and separately there are other
+  CE teams that will work through the deployment pipelines which will also be reviewed with microsoft. 
+
+IAM Portal - done in Bicep
+Needs to be refactored into a TBD acceptable tool

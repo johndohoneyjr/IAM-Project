@@ -13,6 +13,9 @@ This plan translates the planning meeting into actionable user stories and tasks
 - STORY-04: New Release Pipeline (2 weeks, Tony/Jeff)
 - STORY-05: Terraform and IaC Update (4 weeks, Tony)
 - STORY-06: Split Infrastructure AKS Templates (within Story 05 effort)
+- STORY-07: Azure DevOps Observability with Dynatrace
+- STORY-08: IAM Portal IaC Refactor (Bicep → Terraform)
+- STORY-09: Define “Next-Gen” Pipelines and Lock In-Scope Pipelines (4/15/2026)
 
 ## Estimates and Resourcing
 - Baseline: 13 weeks for a single engineer (4 + 3 + 2 + 4; ADO permissions pre-work).
@@ -24,8 +27,8 @@ This plan translates the planning meeting into actionable user stories and tasks
 - Each task lists dependencies to support parallel work once gates are cleared.
 
 ## File Map
-- Stories: `stories/STORY-01-ado-permissions.md`, `stories/STORY-02-code-build-pipeline.md`, `stories/STORY-03-container-build-package.md`, `stories/STORY-04-release-pipeline.md`, `stories/STORY-05-terraform-iac.md`, `stories/STORY-06-split-infrastructure-aks.md`
-- Tasks: see `tasks/` for TASK-01-01 through TASK-06-01, aligned with the story IDs.
+- Stories: `stories/STORY-01-ado-permissions.md`, `stories/STORY-02-code-build-pipeline.md`, `stories/STORY-03-container-build-package.md`, `stories/STORY-04-release-pipeline.md`, `stories/STORY-05-terraform-iac.md`, `stories/STORY-06-split-infrastructure-aks.md`, `stories/STORY-07-ado-observability.md`, `stories/STORY-08-iam-portal-bicep-to-terraform.md`, `stories/STORY-09-next-gen-pipeline-definition-scope.md`
+- Tasks: see `tasks/` for TASK-01-01 through TASK-07-05, plus `tasks/TASK-08-01-iam-portal-bicep-to-terraform.md` and `tasks/TASK-09-01-next-gen-definition-in-scope-pipelines.md`.
 
 ## Source Alignment
 - Outline and estimates derived directly from planning meeting notes.

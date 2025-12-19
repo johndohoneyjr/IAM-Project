@@ -2,8 +2,9 @@
 
 - Story: STORY-07 Azure DevOps Observability with Dynatrace
 - Estimate: 4 days
-- Dependencies: STORY-01 ADO Permissions Change
+- Dependencies: STORY-01 ADO Permissions Change; TASK-07-00 Metric Identification and SLO Definitions
 - Steps:
+  0. Review the approved KPI catalog, required tags/metadata, and alert routing expectations from TASK-07-00.
   1. Coordinate with Onestream Dynatrace team to understand existing tenant setup and integration patterns.
   2. Install Dynatrace Azure DevOps extension in the organization.
   3. Configure authentication and service connections between Azure DevOps and Dynatrace.
@@ -13,3 +14,4 @@
   - Dynatrace extension installed and configured with proper authentication.
   - Documented configuration steps and service connection details.
   - Successful test data transmission from sample pipeline to Dynatrace.
+

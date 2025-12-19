@@ -13,11 +13,11 @@ This plan sequences the IAM POC stories into four 2-week sprints. Critical gatin
 
 ## Sprint Goals and Scope
 - **Sprint 1 (Weeks 1-2)**: Clear permissions gate, lock in code-build guardrails, and establish pipeline observability.
-  - Stories/Tasks: STORY-01; STORY-02 tasks TASK-02-01, TASK-02-02; start TASK-02-03 draft; STORY-07 TASK-07-01.
-  - Deliverables: Permissions matrix applied; PR policies enforcing unit tests + security scans; draft generic build template; Dynatrace setup and initial configuration complete.
+  - Stories/Tasks: STORY-01; STORY-02 tasks TASK-02-01, TASK-02-02; start TASK-02-03 draft; STORY-07 tasks TASK-07-00, TASK-07-01.
+  - Deliverables: Permissions matrix applied; PR policies enforcing unit tests + security scans; draft generic build template; KPI catalog + SLO thresholds defined; Dynatrace setup and initial configuration complete.
 - **Sprint 2 (Weeks 3-4)**: Finish build templates and modernize container build/package flow.
-  - Stories/Tasks: Complete TASK-02-03; STORY-03 tasks TASK-03-01, TASK-03-02, TASK-03-03.
-  - Deliverables: Reusable build template validated in IAM; IAM packaging split per service with centralized deps.
+  - Stories/Tasks: Complete TASK-02-03; STORY-03 tasks TASK-03-01, TASK-03-02, TASK-03-03; STORY-09 TASK-09-01.
+  - Deliverables: Reusable build template validated in IAM; IAM packaging split per service with centralized deps; “Next-Gen” pipeline definition + management-approved in-scope pipeline list for **4/15/2026**.
 - **Sprint 3 (Weeks 5-6)**: Finalize container work and stand up the new release pipeline.
   - Stories/Tasks: STORY-03 tasks TASK-03-04, TASK-03-05; STORY-04 tasks TASK-04-01, TASK-04-02, TASK-04-03.
   - Deliverables: Legacy release option removed; generic container templates in use; release pipeline with approvals wired to templates.
